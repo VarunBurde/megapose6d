@@ -27,12 +27,15 @@ from typing import Dict, List, Set
 from dataclasses import dataclass
 from functools import partial
 from typing import Dict, List, Optional, Set
+from ..ngp_renderer.ngp_render_api import ngp_render
 
 # Third Party
 import numpy as np
 import panda3d as p3d
 from direct.showbase.ShowBase import ShowBase
 from tqdm import tqdm
+from scipy.spatial.transform import Rotation as Rsci
+
 
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset
@@ -94,6 +97,7 @@ class App(ShowBase):
             assert minor_number_el is not None
             dev_id = minor_number_el.text
             os.environ["EGL_VISIBLE_DEVICES"] = str(dev_id)
+
 
         super().__init__(windowType="offscreen")
         self.render.set_shader_auto()
@@ -259,6 +263,7 @@ class Panda3dSceneRenderer:
         self._app.graphicsEngine.renderFrame()
         self._app.graphicsEngine.syncFrame()
 
+
         renderings = []
         for camera in cameras:
             rgb = camera.get_rgb_image()
@@ -269,6 +274,26 @@ class Panda3dSceneRenderer:
             if render_depth:
                 rendering.depth = camera.get_depth_image()
             renderings.append(rendering)
+        return renderings
+
+    def render_images_ngp(
+            self, cameras: List[Panda3dCamera], copy_arrays: bool = True, render_depth: bool = False
+    ) -> List[CameraRenderingData]:
+
+
+        renderings = []
+        for camera in cameras:
+            resolution = np.array(camera.resolution)
+            transform_data = camera.node_path.getTransform()
+            translation = np.array(transform_data.getPos())
+            rotation = np.array(transform_data.getHpr())
+            rotation = Rsci.from_euler('xyz', rotation, degrees=True).as_matrix()
+            transform_matrix = np.eye(4)
+            transform_matrix[:3, :3] = rotation
+            transform_matrix[:3, 3] = translation
+            weight_path = "/home/varun/PycharmProjects/megapose6d/local_data/examples/barbecue-sauce/ngp_weights/base.ingp"
+            mega = ngp_render(weight_path, resolution)
+
         return renderings
 
     def setup_lights(
@@ -316,6 +341,7 @@ class Panda3dSceneRenderer:
 
         start = time.time()
         renderings = self.render_images(cameras, copy_arrays=copy_arrays, render_depth=render_depth)
+        renderings_ngp = self.render_images_ngp(cameras, copy_arrays=copy_arrays, render_depth=render_depth)
         if render_normals:
             for object_node in object_nodes:
                 self.use_normals_texture(object_node)

@@ -125,6 +125,7 @@ def worker_loop(
                 render_depth=render_args.render_depth,
                 copy_arrays=True,  # ensures non-negative strid
             )
+
             renderings_ = renderings[0]
         else:
             h, w = scene_data.camera_data.resolution
@@ -133,7 +134,6 @@ def worker_loop(
                 normals=np.zeros((h, w, 1), dtype=np.uint8),
                 depth=np.zeros((h, w, 1), dtype=np.float32),
             )
-
         output = RenderOutput(
             data_id=render_args.data_id,
             rgb=torch.tensor(renderings_.rgb).share_memory_(),
