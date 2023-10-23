@@ -578,65 +578,68 @@ class PoseEstimator(torch.nn.Module):
                 detections=detections,
                 cuda_timer=cuda_timer,
             )
-            timing_str += f"coarse={coarse_extra_data['time']:.2f}, "
+            # timing_str += f"coarse={coarse_extra_data['time']:.2f}, "
+            #
+            # # Extract top-K coarse hypotheses
+            # data_TCO_filtered = self.filter_pose_estimates(
+            #     data_TCO_coarse, top_K=n_pose_hypotheses, filter_field="coarse_logit"
+            # )
+        # else:
+        #     data_TCO_coarse = coarse_estimates
+        #     coarse_extra_data = None
+        #     data_TCO_filtered = coarse_estimates
+        #
+        # preds, refiner_extra_data = self.forward_refiner(
+        #     observation,
+        #     data_TCO_filtered,
+        #     n_iterations=n_refiner_iterations,
+        #     keep_all_outputs=keep_all_refiner_outputs,
+        #     cuda_timer=cuda_timer,
+        # )
+        # data_TCO_refined = preds[f"iteration={n_refiner_iterations}"]
+        # timing_str += f"refiner={refiner_extra_data['time']:.2f}, "
+        #
+        # # Score the refined poses using the coarse model.
+        # data_TCO_scored, scoring_extra_data = self.forward_scoring_model(
+        #     observation,
+        #     data_TCO_refined,
+        #     cuda_timer=cuda_timer,
+        # )
+        # timing_str += f"scoring={scoring_extra_data['time']:.2f}, "
+        #
+        # # Extract the highest scoring pose estimate for each instance_id
+        # data_TCO_final_scored = self.filter_pose_estimates(
+        #     data_TCO_scored, top_K=1, filter_field="pose_logit"
+        # )
+        #
+        # # Optionally run ICP or TEASER++
+        # if run_depth_refiner:
+        #     depth_refiner_start = time.time()
+        #     data_TCO_depth_refiner, _ = self.run_depth_refiner(observation, data_TCO_final_scored)
+        #     data_TCO_final = data_TCO_depth_refiner
+        #     depth_refiner_time = time.time() - depth_refiner_start
+        #     timing_str += f"depth refiner={depth_refiner_time:.2f}"
+        # else:
+        #     data_TCO_depth_refiner = None
+        #     data_TCO_final = data_TCO_final_scored
+        #
+        # timer.stop()
+        # timing_str = f"total={timer.elapsed():.2f}, {timing_str}"
+        #
+        # extra_data: dict = dict()
+        # extra_data["coarse"] = {"preds": data_TCO_coarse, "data": coarse_extra_data}
+        # extra_data["coarse_filter"] = {"preds": data_TCO_filtered}
+        # extra_data["refiner_all_hypotheses"] = {"preds": preds, "data": refiner_extra_data}
+        # extra_data["scoring"] = {"preds": data_TCO_scored, "data": scoring_extra_data}
+        # extra_data["refiner"] = {"preds": data_TCO_final_scored, "data": refiner_extra_data}
+        # extra_data["timing_str"] = timing_str
+        # extra_data["time"] = timer.elapsed()
+        #
+        # if run_depth_refiner:
+        #     extra_data["depth_refiner"] = {"preds": data_TCO_depth_refiner}
 
-            # Extract top-K coarse hypotheses
-            data_TCO_filtered = self.filter_pose_estimates(
-                data_TCO_coarse, top_K=n_pose_hypotheses, filter_field="coarse_logit"
-            )
-        else:
-            data_TCO_coarse = coarse_estimates
-            coarse_extra_data = None
-            data_TCO_filtered = coarse_estimates
-
-        preds, refiner_extra_data = self.forward_refiner(
-            observation,
-            data_TCO_filtered,
-            n_iterations=n_refiner_iterations,
-            keep_all_outputs=keep_all_refiner_outputs,
-            cuda_timer=cuda_timer,
-        )
-        data_TCO_refined = preds[f"iteration={n_refiner_iterations}"]
-        timing_str += f"refiner={refiner_extra_data['time']:.2f}, "
-
-        # Score the refined poses using the coarse model.
-        data_TCO_scored, scoring_extra_data = self.forward_scoring_model(
-            observation,
-            data_TCO_refined,
-            cuda_timer=cuda_timer,
-        )
-        timing_str += f"scoring={scoring_extra_data['time']:.2f}, "
-
-        # Extract the highest scoring pose estimate for each instance_id
-        data_TCO_final_scored = self.filter_pose_estimates(
-            data_TCO_scored, top_K=1, filter_field="pose_logit"
-        )
-
-        # Optionally run ICP or TEASER++
-        if run_depth_refiner:
-            depth_refiner_start = time.time()
-            data_TCO_depth_refiner, _ = self.run_depth_refiner(observation, data_TCO_final_scored)
-            data_TCO_final = data_TCO_depth_refiner
-            depth_refiner_time = time.time() - depth_refiner_start
-            timing_str += f"depth refiner={depth_refiner_time:.2f}"
-        else:
-            data_TCO_depth_refiner = None
-            data_TCO_final = data_TCO_final_scored
-
-        timer.stop()
-        timing_str = f"total={timer.elapsed():.2f}, {timing_str}"
-
-        extra_data: dict = dict()
-        extra_data["coarse"] = {"preds": data_TCO_coarse, "data": coarse_extra_data}
-        extra_data["coarse_filter"] = {"preds": data_TCO_filtered}
-        extra_data["refiner_all_hypotheses"] = {"preds": preds, "data": refiner_extra_data}
-        extra_data["scoring"] = {"preds": data_TCO_scored, "data": scoring_extra_data}
-        extra_data["refiner"] = {"preds": data_TCO_final_scored, "data": refiner_extra_data}
-        extra_data["timing_str"] = timing_str
-        extra_data["time"] = timer.elapsed()
-
-        if run_depth_refiner:
-            extra_data["depth_refiner"] = {"preds": data_TCO_depth_refiner}
+        data_TCO_final = data_TCO_coarse
+        extra_data  = data_TCO_coarse
 
         return data_TCO_final, extra_data
 

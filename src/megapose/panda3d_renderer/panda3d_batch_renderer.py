@@ -24,6 +24,7 @@ from typing import List, Optional, Set, Union
 import numpy as np
 import torch
 import torch.multiprocessing
+from queue import Queue
 
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset
@@ -154,7 +155,7 @@ class Panda3dBatchRenderer:
     def __init__(
         self,
         object_dataset: RigidObjectDataset,
-        n_workers: int = 8,
+        n_workers: int = 0,
         preload_cache: bool = True,
         split_objects: bool = False,
     ):
