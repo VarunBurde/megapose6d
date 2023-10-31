@@ -364,9 +364,16 @@ class Panda3dBatchRenderer:
 
         for i in range(len(labels)):
             # print("Rendering object", i)
-            transform_matrix = TCO[i]
+            w2c = TCO[i]
+            # w2c[1, 3] -= 0.01
+            # w2c[2, 3] -= 0.1
+            w2c[0, 3] -= 0.1
             # print the translation of transform matrix
-            transform_matrix[:3, 3] *= 10
+
+            c2w = np.linalg.inv(w2c)
+            c2w[:3, 3] *= 10
+
+            transform_matrix = c2w
             # print("Translation of transform matrix", transform_matrix[:3, 3])
 
             K = K_cpu[i]
@@ -383,12 +390,12 @@ class Panda3dBatchRenderer:
             list_rgbs[i] = rgb
             list_normals[i] = normal
             list_depths[i] = depth
-            if i == 4:
-                for j in range(i, len(labels)):
-                    list_rgbs[j] = rgb
-                    list_normals[j] = normal
-                    list_depths[j] = depth
-                break
+            # if i == 8:
+            #     for j in range(i, len(labels)):
+            #         list_rgbs[j] = rgb
+            #         list_normals[j] = normal
+            #         list_depths[j] = depth
+            #     break
 
         rgbs = torch.stack(list_rgbs).pin_memory().cuda(non_blocking=True)
         rgbs = rgbs.float().permute(0, 3, 2, 1)/255

@@ -276,26 +276,6 @@ class Panda3dSceneRenderer:
             renderings.append(rendering)
         return renderings
 
-    def render_images_ngp(
-            self, cameras: List[Panda3dCamera], copy_arrays: bool = True, render_depth: bool = False
-    ) -> List[CameraRenderingData]:
-
-
-        renderings = []
-        for camera in cameras:
-            resolution = np.array(camera.resolution)
-            transform_data = camera.node_path.getTransform()
-            translation = np.array(transform_data.getPos())
-            rotation = np.array(transform_data.getHpr())
-            rotation = Rsci.from_euler('xyz', rotation, degrees=True).as_matrix()
-            transform_matrix = np.eye(4)
-            transform_matrix[:3, :3] = rotation
-            transform_matrix[:3, 3] = translation
-            weight_path = "/home/varun/PycharmProjects/megapose6d/local_data/examples/barbecue-sauce/ngp_weights/base.ingp"
-            mega = ngp_render(weight_path, resolution)
-
-        return renderings
-
     def setup_lights(
         self, root_node: p3d.core, light_datas: List[Panda3dLightData]
     ) -> List[p3d.core.NodePath]:
@@ -380,4 +360,54 @@ class Panda3dSceneRenderer:
 
         self.debug_data.timings["setup_time"] = setup_time
         self.debug_data.timings["render_time"] = render_time
+        return renderings
+
+    def render_scene_ngp(
+        self,
+        object_datas: List[Panda3dObjectData],
+        camera_datas: List[Panda3dCameraData],
+        light_datas: List[Panda3dLightData],
+        render_depth: bool = False,
+        copy_arrays: bool = True,
+        render_binary_mask: bool = False,
+        render_normals: bool = False,
+        clear: bool = True,
+    ) -> List[CameraRenderingData]:
+
+        renderings = []
+
+        for camera in camera_datas:
+            resolution = (camera.resolution[1], camera.resolution[0])
+            K = camera.K
+            for object in object_datas:
+                Transformation = object.TWO.matrix
+                label = object.label
+
+                # print("Transformation", Transformation)
+                # print("K", K)
+                # print("resolution", resolution)
+                # print("label", label)
+
+                root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
+                weight_path = os.path.join(root_path, "local_data", "examples", label, "ngp_weight", "base.ingp")
+                ngp_renderer = ngp_render(weight_path, resolution)
+                ngp_renderer.set_fov(K)
+                rgb = ngp_renderer.get_image_from_tranform(Transformation, "Shade")
+                # convert dtypy to uint8
+                rgb = np.array(rgb, dtype=np.uint8)
+
+                rendering = CameraRenderingData(rgb)
+
+                if render_normals:
+                    normal = ngp_renderer.get_image_from_tranform(Transformation, "Normals")
+                    normal = np.array(normal, dtype=np.uint8)
+                    rendering.normals = normal
+
+                if render_depth:
+                    depth = ngp_renderer.get_image_from_tranform(Transformation, "Depth")
+                    depth = np.array(depth, dtype=np.uint8)
+                    rendering.depth = depth
+
+                renderings.append(rendering)
+
         return renderings

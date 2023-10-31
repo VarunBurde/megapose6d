@@ -52,7 +52,7 @@ class ngp_render():
         self.testbed.set_nerf_camera_matrix(projection_matrix)
         image = self.testbed.render(self.resolution[0], self.resolution[1], self.screenshot_spp, True)
         image = np.array(image) * 255.0
-        image = cv2.cvtColor(image, cv2.COLOR_RGBA2BGR)
+        image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
         return image
 
     def get_projection_matrix(self, transform):
