@@ -19,6 +19,12 @@ class ngp_render():
         self.testbed.load_snapshot(weight_path)
         self.screenshot_spp = 1
         self.resolution = resolution
+        self.flip_mat = np.array([
+                                    [1, 0, 0, 0],
+                                    [0, -1, 0, 0],
+                                    [0, 0, -1, 0],
+                                    [0, 0, 0, 1]
+                                ])
 
     def load_snapshot(self, snapshot_path):
         self.testbed.load_snapshot(snapshot_path)
@@ -34,8 +40,14 @@ class ngp_render():
     def set_camera_matrix(self, K):
         self.testbed.set_nerf_camera_matrix(K)
 
+    def set_fov(self, K):
+        width = self.resolution[0]
+        foclen = K[0, 0]
+        fov = np.degrees(2 * np.arctan2(width, 2 * foclen))
+        self.testbed.fov = fov
     def get_image_from_tranform(self, matrix, mode):
         self.set_renderer_mode(mode)
+        matrix =np.matmul(matrix, self.flip_mat)
         projection_matrix = self.get_projection_matrix(matrix)
         self.testbed.set_nerf_camera_matrix(projection_matrix)
         image = self.testbed.render(self.resolution[0], self.resolution[1], self.screenshot_spp, True)

@@ -13,7 +13,9 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import os.path
+
+
+
 # Standard Library
 from dataclasses import dataclass
 from typing import List, Optional, Set, Union
@@ -22,15 +24,12 @@ from typing import List, Optional, Set, Union
 import numpy as np
 import torch
 import torch.multiprocessing
-from queue import Queue
 
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset
 from megapose.lib3d.transform import Transform
 from megapose.lib3d.transform_ops import invert_transform_matrices
 from megapose.utils.logging import get_logger
-from megapose.ngp_renderer.ngp_render_api import ngp_render
-
 
 # Local Folder
 from .panda3d_scene_renderer import Panda3dSceneRenderer
@@ -155,7 +154,7 @@ class Panda3dBatchRenderer:
     def __init__(
         self,
         object_dataset: RigidObjectDataset,
-        n_workers: int = 0,
+        n_workers: int = 8,
         preload_cache: bool = True,
         split_objects: bool = False,
     ):
@@ -339,76 +338,3 @@ class Panda3dBatchRenderer:
 
     def __del__(self) -> None:
         self.stop()
-
-    def ngp_renderer(
-                self,
-                labels: List[str],
-                TCO: torch.Tensor,
-                K: torch.Tensor,
-                light_datas: List[List[Panda3dLightData]],
-                resolution: Resolution,
-                render_depth: bool = False,
-                render_mask: bool = False,
-                render_normals: bool = False,
-        ) -> BatchRenderOutput:
-
-        TCO = TCO.detach().cpu().numpy()
-        K_cpu = K.detach().cpu().numpy()
-
-        root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-        weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
-        ngp_renderer = ngp_render(weight_path, resolution)
-
-        list_rgbs = [None for _ in np.arange(len(labels))]
-        list_depths = [None for _ in np.arange(len(labels))]
-        list_normals = [None for _ in np.arange(len(labels))]
-
-        for i in range(len(labels)):
-            # print("Rendering object", i)
-            transform_matrix = TCO[i]
-            # print the translation of transform matrix
-            transform_matrix[:3, 3] *= 10
-            # print("Translation of transform matrix", transform_matrix[:3, 3])
-
-            K = K_cpu[i]
-            ngp_renderer.set_fov(K)
-            rgb = ngp_renderer.get_image_from_tranform(transform_matrix, "Shade")
-            normal = ngp_renderer.get_image_from_tranform(transform_matrix, "Normals")
-            depth = ngp_renderer.get_image_from_tranform(transform_matrix, "Depth")
-
-            # convert rgb to tensor
-            rgb = torch.tensor(rgb).share_memory_()
-            normal = torch.tensor(normal).share_memory_()
-            depth = torch.tensor(depth).share_memory_()
-
-            list_rgbs[i] = rgb
-            list_normals[i] = normal
-            list_depths[i] = depth
-            if i == 4:
-                for j in range(i, len(labels)):
-                    list_rgbs[j] = rgb
-                    list_normals[j] = normal
-                    list_depths[j] = depth
-                break
-
-        rgbs = torch.stack(list_rgbs).pin_memory().cuda(non_blocking=True)
-        rgbs = rgbs.float().permute(0, 3, 2, 1)/255
-
-        if render_depth:
-            depths = torch.stack(list_depths).pin_memory().cuda(non_blocking=True)
-            depths = depths.float().permute(0, 3, 2, 1)
-        else:
-            depths = None
-
-        if render_normals:
-            normals = torch.stack(list_normals).pin_memory().cuda(non_blocking=True)
-            normals = normals.float().permute(0, 3, 2, 1)/255
-        else:
-            normals = None
-
-        return BatchRenderOutput(
-            rgbs=rgbs,
-            depths=depths,
-            normals=normals,
-        )
-

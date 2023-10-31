@@ -21,6 +21,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import cv2
+import os
 # Third Party
 import numpy as np
 import torch
@@ -381,7 +383,7 @@ class PosePredictor(nn.Module):
 
         render_mask = False
 
-        render_data = self.renderer.render(
+        render_data = self.renderer.ngp_renderer(
             labels=labels_mv,
             TCO=TCV_O.flatten(0, 1),
             K=KV.flatten(0, 1),
@@ -392,8 +394,21 @@ class PosePredictor(nn.Module):
             light_datas=light_datas,
         )
 
+
         cat_list = []
         cat_list.append(render_data.rgbs)
+
+
+        rgb_images = render_data.rgbs.cpu().numpy()
+
+
+        rgb_images = np.transpose(rgb_images, (0, 2, 3, 1))
+        loc = "/home/varun/PycharmProjects/megapose6d_varun/local_data/examples/barbecue-sauce/rendered_data"
+        # save all the images using opencv
+        for i in range(len(rgb_images)):
+            img = rgb_images[i] * 255.0
+            cv2.imwrite(os.path.join(loc, "rendered_image_" + str(i) + ".png"), img)
+
 
         if self.render_normals:
             cat_list.append(render_data.normals)
