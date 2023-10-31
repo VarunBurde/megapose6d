@@ -590,6 +590,7 @@ class PoseEstimator(torch.nn.Module):
             data_TCO_coarse = coarse_estimates
             coarse_extra_data = None
             data_TCO_filtered = coarse_estimates
+        # return data_TCO_filtered, coarse_extra_data
 
         print("fine model_______________________________________________________")
         preds, refiner_extra_data = self.forward_refiner(

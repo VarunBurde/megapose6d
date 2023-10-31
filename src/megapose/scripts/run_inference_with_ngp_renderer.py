@@ -169,7 +169,7 @@ def make_output_visualization(
         ),
     ]
 
-    renderings = renderer.render_scene(
+    renderings = renderer.render_scene_ngp(
         object_datas,
         [camera_data],
         light_datas,
