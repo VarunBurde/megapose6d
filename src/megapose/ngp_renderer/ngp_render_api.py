@@ -45,9 +45,10 @@ class ngp_render():
         foclen = K[0, 0]
         fov = np.degrees(2 * np.arctan2(width, 2 * foclen))
         self.testbed.fov = fov
-    def get_image_from_tranform(self, matrix, mode):
+    def get_image_from_tranform(self, matrix, mode, flip=True):
         self.set_renderer_mode(mode)
-        matrix =np.matmul(matrix, self.flip_mat)
+        if flip:
+            matrix = np.matmul(matrix, self.flip_mat)
         projection_matrix = self.get_projection_matrix(matrix)
         self.testbed.set_nerf_camera_matrix(projection_matrix)
         image = self.testbed.render(self.resolution[0], self.resolution[1], self.screenshot_spp, True)

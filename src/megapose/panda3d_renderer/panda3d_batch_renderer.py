@@ -17,7 +17,7 @@ import os.path
 # Standard Library
 from dataclasses import dataclass
 from typing import List, Optional, Set, Union
-
+import json
 # Third Party
 import numpy as np
 import torch
@@ -356,22 +356,31 @@ class Panda3dBatchRenderer:
 
         root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
         weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
-        ngp_renderer = ngp_render(weight_path, resolution)
+        world_tranformation = json.loads(open(os.path.join(root_path, "local_data", "examples", labels[0],"ngp_weight", "scale.json")).read())
+        world_tranformation = np.array(world_tranformation['transformation'])
 
+        resolution = (resolution[1], resolution[0])
+        ngp_renderer = ngp_render(weight_path, resolution)
         list_rgbs = [None for _ in np.arange(len(labels))]
         list_depths = [None for _ in np.arange(len(labels))]
         list_normals = [None for _ in np.arange(len(labels))]
 
         for i in range(len(labels)):
             # print("Rendering object", i)
+
+            # First scale the poses to real world scale
             w2c = TCO[i]
-            # w2c[1, 3] -= 0.01
-            # w2c[2, 3] -= 0.1
-            w2c[0, 3] -= 0.1
-            # print the translation of transform matrix
+
+            # convert it to mm
+            w2c[:3, 3] = w2c[:3, 3] * 1000
+
+            # Transform the object to the gt mesh
+            w2c = np.matmul(w2c, world_tranformation)
+
+            # convert back to meters
+            w2c[:3, 3] = w2c[:3, 3] / 1000
 
             c2w = np.linalg.inv(w2c)
-            c2w[:3, 3] *= 10
 
             transform_matrix = c2w
             # print("Translation of transform matrix", transform_matrix[:3, 3])
@@ -398,17 +407,17 @@ class Panda3dBatchRenderer:
             #     break
 
         rgbs = torch.stack(list_rgbs).pin_memory().cuda(non_blocking=True)
-        rgbs = rgbs.float().permute(0, 3, 2, 1)/255
+        rgbs = rgbs.float().permute(0, 3, 1, 2)/255
 
         if render_depth:
             depths = torch.stack(list_depths).pin_memory().cuda(non_blocking=True)
-            depths = depths.float().permute(0, 3, 2, 1)
+            depths = depths.float().permute(0, 3, 1, 2)
         else:
             depths = None
 
         if render_normals:
             normals = torch.stack(list_normals).pin_memory().cuda(non_blocking=True)
-            normals = normals.float().permute(0, 3, 2, 1)/255
+            normals = normals.float().permute(0, 3, 1, 2)/255
         else:
             normals = None
 

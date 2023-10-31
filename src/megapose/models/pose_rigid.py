@@ -398,12 +398,12 @@ class PosePredictor(nn.Module):
         cat_list = []
         cat_list.append(render_data.rgbs)
 
-
         rgb_images = render_data.rgbs.cpu().numpy()
 
-
         rgb_images = np.transpose(rgb_images, (0, 2, 3, 1))
-        loc = "/home/varun/PycharmProjects/megapose6d_varun/local_data/examples/barbecue-sauce/rendered_data"
+        root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
+        loc = os.path.join(root_path, "local_data", "examples", labels[0], "rendered_data")
+
         # save all the images using opencv
         for i in range(len(rgb_images)):
             img = rgb_images[i] * 255.0

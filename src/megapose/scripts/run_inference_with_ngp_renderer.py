@@ -228,7 +228,7 @@ if __name__ == "__main__":
     # parser.add_argument("--vis-outputs", action="store_true")
     # args = parser.parse_args()
 
-    example_dir = LOCAL_DATA_DIR / "examples" / "barbecue-sauce"
+    example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
 
     # if args.vis_detections:
     #     make_detections_visualization(example_dir)
@@ -241,4 +241,4 @@ if __name__ == "__main__":
 
     make_detections_visualization(example_dir)
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-    make_output_visualization(example_dir)
+    # make_output_visualization(example_dir)
