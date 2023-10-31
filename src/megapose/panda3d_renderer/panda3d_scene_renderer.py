@@ -404,12 +404,13 @@ class Panda3dSceneRenderer:
                 Transformation = np.matmul(Transformation, world_tranformation)
 
                 # convert back to meters
-                Transformation[:3, 3] = Transformation[:3, 3] / 1000
+                Transformation[:3, 3] = Transformation[:3, 3] / 350
 
+                Transformation = np.linalg.inv(Transformation)
 
                 rotation = Rsci.from_matrix(Transformation[:3, :3])
-                print("Transformation", Transformation[:3, 3])
-                print("rotation", rotation.as_euler("xyz", degrees=True))
+                # print("Transformation", Transformation[:3, 3])
+                # print("rotation", rotation.as_euler("xyz", degrees=True))
                 rgb = ngp_renderer.get_image_from_tranform(Transformation, "Shade")
                 rgb = np.array(rgb, dtype=np.uint8)
 

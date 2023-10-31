@@ -378,7 +378,7 @@ class Panda3dBatchRenderer:
             w2c = np.matmul(w2c, world_tranformation)
 
             # convert back to meters
-            w2c[:3, 3] = w2c[:3, 3] / 1000
+            w2c[:3, 3] = w2c[:3, 3] / 350
 
             c2w = np.linalg.inv(w2c)
 

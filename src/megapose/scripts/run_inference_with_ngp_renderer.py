@@ -239,6 +239,6 @@ if __name__ == "__main__":
     # if args.vis_outputs:
     #     make_output_visualization(example_dir)
 
-    make_detections_visualization(example_dir)
+    # make_detections_visualization(example_dir)
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-    # make_output_visualization(example_dir)
+    make_output_visualization(example_dir)
