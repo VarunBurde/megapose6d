@@ -28,7 +28,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import Dict, List, Optional, Set
 from ..ngp_renderer.ngp_render_api import ngp_render
-
+import json
 # Third Party
 import numpy as np
 import panda3d as p3d
@@ -390,10 +390,27 @@ class Panda3dSceneRenderer:
 
                 root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
                 weight_path = os.path.join(root_path, "local_data", "examples", label, "ngp_weight", "base.ingp")
+                world_tranformation = json.loads(open(
+                    os.path.join(root_path, "local_data", "examples", label, "ngp_weight", "scale.json")).read())
+                world_tranformation = np.array(world_tranformation['transformation'])
+
                 ngp_renderer = ngp_render(weight_path, resolution)
                 ngp_renderer.set_fov(K)
+
+                # convert it to mm
+                Transformation[:3, 3] = Transformation[:3, 3] * 1000
+
+                # Transform the object to the gt mesh
+                Transformation = np.matmul(Transformation, world_tranformation)
+
+                # convert back to meters
+                Transformation[:3, 3] = Transformation[:3, 3] / 1000
+
+
+                rotation = Rsci.from_matrix(Transformation[:3, :3])
+                print("Transformation", Transformation[:3, 3])
+                print("rotation", rotation.as_euler("xyz", degrees=True))
                 rgb = ngp_renderer.get_image_from_tranform(Transformation, "Shade")
-                # convert dtypy to uint8
                 rgb = np.array(rgb, dtype=np.uint8)
 
                 rendering = CameraRenderingData(rgb)
