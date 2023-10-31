@@ -22,7 +22,6 @@ import json
 import numpy as np
 import torch
 import torch.multiprocessing
-from queue import Queue
 
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset
@@ -155,7 +154,7 @@ class Panda3dBatchRenderer:
     def __init__(
         self,
         object_dataset: RigidObjectDataset,
-        n_workers: int = 0,
+        n_workers: int = 2,
         preload_cache: bool = True,
         split_objects: bool = False,
     ):
@@ -379,7 +378,7 @@ class Panda3dBatchRenderer:
             w2c = np.matmul(w2c, world_tranformation)
 
             # convert back to meters
-            w2c[:3, 3] = w2c[:3, 3] / 350
+            w2c[:3, 3] = w2c[:3, 3] / 1000
 
             c2w = np.linalg.inv(w2c)
 
