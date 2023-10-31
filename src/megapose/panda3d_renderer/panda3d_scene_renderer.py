@@ -404,7 +404,7 @@ class Panda3dSceneRenderer:
                 Transformation = np.matmul(Transformation, world_tranformation)
 
                 # convert back to meters
-                Transformation[:3, 3] = Transformation[:3, 3] / 350
+                Transformation[:3, 3] = Transformation[:3, 3] / 1000
 
                 Transformation = np.linalg.inv(Transformation)
 
