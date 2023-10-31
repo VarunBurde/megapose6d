@@ -572,12 +572,14 @@ class PoseEstimator(torch.nn.Module):
                     detections, **detection_filter_kwargs
                 )
 
+            print("coarse model________________________________________________________")
             # Run the coarse estimator using gt_detections
             data_TCO_coarse, coarse_extra_data = self.forward_coarse_model(
                 observation=observation,
                 detections=detections,
                 cuda_timer=cuda_timer,
             )
+
             timing_str += f"coarse={coarse_extra_data['time']:.2f}, "
 
             # Extract top-K coarse hypotheses
@@ -589,6 +591,7 @@ class PoseEstimator(torch.nn.Module):
             coarse_extra_data = None
             data_TCO_filtered = coarse_estimates
 
+        print("fine model_______________________________________________________")
         preds, refiner_extra_data = self.forward_refiner(
             observation,
             data_TCO_filtered,
@@ -611,6 +614,7 @@ class PoseEstimator(torch.nn.Module):
         data_TCO_final_scored = self.filter_pose_estimates(
             data_TCO_scored, top_K=1, filter_field="pose_logit"
         )
+
 
         # Optionally run ICP or TEASER++
         if run_depth_refiner:

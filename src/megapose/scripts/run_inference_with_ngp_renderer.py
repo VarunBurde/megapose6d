@@ -159,10 +159,6 @@ def make_output_visualization(
     object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
     object_dataset = make_object_dataset(example_dir)
 
-    print("camera data", camera_data.TWC)
-    print("object data", object_datas)
-
-
     renderer = Panda3dSceneRenderer(object_dataset)
 
     camera_data, object_datas = convert_scene_observation_to_panda3d(camera_data, object_datas)
@@ -225,20 +221,24 @@ def make_output_visualization(
 if __name__ == "__main__":
     set_logging_level("info")
     parser = argparse.ArgumentParser()
-    parser.add_argument("example_name")
-    parser.add_argument("--model", type=str, default="megapose-1.0-RGB-multi-hypothesis")
-    parser.add_argument("--vis-detections", action="store_true")
-    parser.add_argument("--run-inference", action="store_true")
-    parser.add_argument("--vis-outputs", action="store_true")
-    args = parser.parse_args()
+    # parser.add_argument("example_name")
+    # parser.add_argument("--model", type=str, default="megapose-1.0-RGB-multi-hypothesis")
+    # parser.add_argument("--vis-detections", action="store_true")
+    # parser.add_argument("--run-inference", action="store_true")
+    # parser.add_argument("--vis-outputs", action="store_true")
+    # args = parser.parse_args()
 
-    example_dir = LOCAL_DATA_DIR / "examples" / args.example_name
+    example_dir = LOCAL_DATA_DIR / "examples" / "barbecue-sauce"
 
-    if args.vis_detections:
-        make_detections_visualization(example_dir)
+    # if args.vis_detections:
+    #     make_detections_visualization(example_dir)
+    #
+    # if args.run_inference:
+    #     run_inference(example_dir, args.model)
+    #
+    # if args.vis_outputs:
+    #     make_output_visualization(example_dir)
 
-    if args.run_inference:
-        run_inference(example_dir, args.model)
-
-    if args.vis_outputs:
-        make_output_visualization(example_dir)
+    make_detections_visualization(example_dir)
+    run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
+    make_output_visualization(example_dir)

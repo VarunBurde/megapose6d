@@ -341,7 +341,6 @@ class Panda3dSceneRenderer:
 
         start = time.time()
         renderings = self.render_images(cameras, copy_arrays=copy_arrays, render_depth=render_depth)
-        renderings_ngp = self.render_images_ngp(cameras, copy_arrays=copy_arrays, render_depth=render_depth)
         if render_normals:
             for object_node in object_nodes:
                 self.use_normals_texture(object_node)
