@@ -399,12 +399,6 @@ class Panda3dBatchRenderer:
             list_rgbs[i] = rgb
             list_normals[i] = normal
             list_depths[i] = depth
-            # if i == 8:
-            #     for j in range(i, len(labels)):
-            #         list_rgbs[j] = rgb
-            #         list_normals[j] = normal
-            #         list_depths[j] = depth
-            #     break
 
         rgbs = torch.stack(list_rgbs).pin_memory().cuda(non_blocking=True)
         rgbs = rgbs.float().permute(0, 3, 1, 2)/255
