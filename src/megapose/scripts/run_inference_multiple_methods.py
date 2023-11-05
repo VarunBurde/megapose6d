@@ -521,7 +521,7 @@ def make_output_visualization_newest(
             camera_data, object_datas = convert_scene_observation_to_panda3d(
                 camera_data, object_datas
             )
-            renderings = renderer.render_scene_ngp(
+            renderings = renderer.render_scene(
                 object_datas,
                 [camera_data],
                 light_datas,
@@ -558,7 +558,7 @@ def main():
 
     model = "megapose-1.0-RGB-multi-hypothesis"
     # make_detections_visualization(example_dir)
-    run_inference_newest(example_dir, model, global_method, global_frames2process)
+    # run_inference_newest(example_dir, model, global_method, global_frames2process)
     make_output_visualization_newest(example_dir, global_method, global_frames2process)
 
 

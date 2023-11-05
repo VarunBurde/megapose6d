@@ -5,6 +5,7 @@ sys.path.append(pyngp_path)
 import pyngp as ngp  # noqa
 import cv2
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 class ngp_render():
     def __init__(self, weight_path, resolution):
@@ -31,23 +32,13 @@ class ngp_render():
         elif mode == 'Shade':
             self.testbed.render_mode = ngp.RenderMode.Shade
 
-    # def set_fov(self, K):
-    #     width = K[0,2] * 2
-    #     height = K[1,2] * 2
-    #     fl_x = K[0,0]
-    #     fl_y = K[1,1]
-    #
-    #     fov_x = np.arctan2(width / 2, fl_x) * 2 * 180 / np.pi
-    #     fov_y = np.arctan2(height / 2, fl_y) * 2 * 180 / np.pi
-    #     self.testbed.fov_xy = np.array([fov_x, fov_y])
-
 
     def set_fov(self, K):
         width = self.resolution[0]
         foclen = K[0, 0]
         fov = np.degrees(2 * np.arctan2(width, 2 * foclen))
         self.testbed.fov = fov
-        # self.testbed.fov_axis = 0
+        self.testbed.fov_axis = 0
 
     def set_exposure(self, exposure):
         self.testbed.exposure = exposure
@@ -60,29 +51,39 @@ class ngp_render():
         image = np.array(image) * 255.0
         return image
 
-    def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
+    def set_camera_matrix(self, Extrinsics, nerf_scale, mesh_transformation):
 
-        # convert it to mm
-        W2C = Extrinsics
-        W2C[:3, 3] = W2C[:3, 3] * mesh_scale
+        ## debug
+        r = R.from_matrix(Extrinsics[:3,:3])
+        rotation = r.as_euler('zyx', degrees=True)
+        print(rotation, Extrinsics[:3, 3])
 
-        # Transform the object to the gt mesh
-        # W2C = np.matmul(W2C, mesh_transformation)
+        # rotation = R.from_euler("zyx",[180,-140,0], degrees=True)
+        rotation = R.from_euler("yzx",[160,180,0], degrees=True)
+        W2C = np.eye(4)
+        W2C[:3,:3] = rotation.as_matrix()
+        W2C[2, 3] = 0.4
+
+        # convert to C2W
         C2W = np.linalg.inv(W2C)
 
-        # convert back to meters
-        C2W[:3, 3] = C2W[:3, 3] / 100
+        r = R.from_matrix(C2W[:3,:3])
+        rotation = r.as_euler('zyx', degrees=True)
+        print(rotation)
 
-        camera_matrix = C2W
-        camera_matrix = np.matmul(camera_matrix, self.flip_mat)
 
-        camera_matrix= camera_matrix[:-1, :]
+        C2W[:3, 3] /= nerf_scale
+
+        # convert TCO transformation to mm scale
+        C2W[:3,3] *= 1000
+
+        # C2W[0:3, 1:3] *= -1
+        # c2w = C2W[np.array([1, 0, 2, 3]), :]
+        # c2w[2, :] *= -1
+
+        C2W = np.matmul(C2W, self.flip_mat)
+
+        camera_matrix= C2W[:-1, :]
 
         self.testbed.set_nerf_camera_matrix(camera_matrix)
 
-    def show_image(self, image):
-        cv2.imshow("image", image)
-        cv2.waitKey(0)
-
-    def save_image(self, image, path):
-        cv2.imwrite(path, image)
