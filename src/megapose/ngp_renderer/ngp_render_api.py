@@ -1,11 +1,7 @@
 import sys
-import os
-
-pyngp_path = "/home/varun/PycharmProjects/instant-ngp/build_megapose"
+pyngp_path = "/home/testbed/Projects/instant-ngp/build_megapose"
 
 sys.path.append(pyngp_path)
-
-
 import pyngp as ngp  # noqa
 import cv2
 import numpy as np
@@ -26,6 +22,12 @@ class ngp_render():
                                     [0, 0, 0, 1]
                                 ])
 
+    def increase_brghtness(self, image, value):
+        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+        hsv[:,:,2] += value
+        image = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+        return image
+
     def load_snapshot(self, snapshot_path):
         self.testbed.load_snapshot(snapshot_path)
 
@@ -37,27 +39,48 @@ class ngp_render():
         elif mode == 'Shade':
             self.testbed.render_mode = ngp.RenderMode.Shade
 
-    def set_camera_matrix(self, K):
-        self.testbed.set_nerf_camera_matrix(K)
-
     def set_fov(self, K):
-        width = self.resolution[0]
-        foclen = K[0, 0]
-        fov = np.degrees(2 * np.arctan2(width, 2 * foclen))
-        self.testbed.fov = fov
-    def get_image_from_tranform(self, matrix, mode, flip=True):
+
+        width = K[0,2] * 2
+        height = K[1,2] * 2
+        fl_x = K[0,0]
+        fl_y = K[1,1]
+
+        fov_x = np.arctan2(width / 2, fl_x) * 2 * 180 / np.pi
+        fov_y = np.arctan2(height / 2, fl_y) * 2 * 180 / np.pi
+        self.testbed.fov_xy = np.array([fov_x, fov_y])
+
+
+    def get_image_from_tranform(self, Extrinsics, Intrinsics, mesh_scale, mesh_transformation,mode, value = 0):
+        self.set_fov(Intrinsics)
         self.set_renderer_mode(mode)
-        if flip:
-            matrix = np.matmul(matrix, self.flip_mat)
-        projection_matrix = self.get_projection_matrix(matrix)
-        self.testbed.set_nerf_camera_matrix(projection_matrix)
+        # self.testbed.exposure = 50.0
+
+        camera_matrix = self.get_camera_matrix(Extrinsics,mesh_scale, mesh_transformation)
+        self.testbed.set_nerf_camera_matrix(camera_matrix)
         image = self.testbed.render(self.resolution[0], self.resolution[1], self.screenshot_spp, True)
         image = np.array(image) * 255.0
         image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
+        image = self.increase_brghtness(image, value)
         return image
 
-    def get_projection_matrix(self, transform):
-        return transform[:-1, :]
+    def get_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
+
+        # convert it to mm
+        W2C = Extrinsics
+        W2C[:3, 3] = W2C[:3, 3] * mesh_scale
+
+        # Transform the object to the gt mesh
+        # W2C = np.matmul(W2C, mesh_transformation)
+        C2W = np.linalg.inv(W2C)
+
+        # convert back to meters
+        C2W[:3, 3] = C2W[:3, 3] / 100
+
+        camera_matrix = C2W
+        camera_matrix = np.matmul(camera_matrix, self.flip_mat)
+
+        return camera_matrix[:-1, :]
 
     def show_image(self, image):
         cv2.imshow("image", image)

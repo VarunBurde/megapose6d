@@ -410,6 +410,7 @@ class PoseEstimator(torch.nn.Module):
 
             del points_
 
+
             out_ = coarse_model.forward_coarse(
                 images=images_,
                 K=K_,
