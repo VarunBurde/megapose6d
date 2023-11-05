@@ -361,21 +361,26 @@ class Panda3dBatchRenderer:
         mesh_transformation = np.array(world_tranformation['transformation'])
         mesh_scale = world_tranformation["scale"]
 
-        resolution = (resolution[1], resolution[0])
-        ngp_renderer = ngp_render(weight_path, resolution)
         list_rgbs = [None for _ in np.arange(len(labels))]
         list_depths = [None for _ in np.arange(len(labels))]
         list_normals = [None for _ in np.arange(len(labels))]
 
+        resolution = (resolution[1], resolution[0])
+        ngp_renderer = ngp_render(weight_path, resolution)
+
+
         for i in range(len(labels)):
             Extrinsics = TCO[i]
-            K = Intrinsics[i]
-            ngp_renderer.set_fov(K)
-            ngp_renderer.set_exposure(2.0)
+            K_single = Intrinsics[i]
 
-            rgb = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale, mesh_transformation, "Shade")
-            normal = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale, mesh_transformation, "Normals")
-            depth = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale, mesh_transformation,"Depth")
+            ngp_renderer.set_fov(K_single)
+            ngp_renderer.set_exposure(2.0)
+            ngp_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
+
+            rgb = ngp_renderer.get_image_from_tranform("Shade")
+            normal = ngp_renderer.get_image_from_tranform("Normals")
+            depth = ngp_renderer.get_image_from_tranform("Depth")
+
 
             # convert rgb to tensor
             rgb = torch.tensor(rgb).share_memory_()

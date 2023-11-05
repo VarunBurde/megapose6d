@@ -47,22 +47,20 @@ class ngp_render():
         foclen = K[0, 0]
         fov = np.degrees(2 * np.arctan2(width, 2 * foclen))
         self.testbed.fov = fov
-        self.testbed.fov_axis = 0
+        # self.testbed.fov_axis = 0
 
     def set_exposure(self, exposure):
         self.testbed.exposure = exposure
 
-    def get_image_from_tranform(self, Extrinsics, mesh_scale, mesh_transformation, mode, exposure = 0.0):
+    def get_image_from_tranform(self, mode):
 
         self.set_renderer_mode(mode)
-        camera_matrix = self.get_camera_matrix(Extrinsics,mesh_scale, mesh_transformation)
-        self.testbed.set_nerf_camera_matrix(camera_matrix)
         image = self.testbed.render(self.resolution[0], self.resolution[1], self.screenshot_spp, True)
-        image = np.array(image) * 255.0
         image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
+        image = np.array(image) * 255.0
         return image
 
-    def get_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
+    def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
 
         # convert it to mm
         W2C = Extrinsics
@@ -78,7 +76,9 @@ class ngp_render():
         camera_matrix = C2W
         camera_matrix = np.matmul(camera_matrix, self.flip_mat)
 
-        return camera_matrix[:-1, :]
+        camera_matrix= camera_matrix[:-1, :]
+
+        self.testbed.set_nerf_camera_matrix(camera_matrix)
 
     def show_image(self, image):
         cv2.imshow("image", image)
