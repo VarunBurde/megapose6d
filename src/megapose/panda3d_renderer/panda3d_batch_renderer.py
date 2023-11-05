@@ -370,10 +370,12 @@ class Panda3dBatchRenderer:
         for i in range(len(labels)):
             Extrinsics = TCO[i]
             K = Intrinsics[i]
+            ngp_renderer.set_fov(K)
+            ngp_renderer.set_exposure(2.0)
 
-            rgb = ngp_renderer.get_image_from_tranform(Extrinsics, K, mesh_scale, mesh_transformation, "Shade")
-            normal = ngp_renderer.get_image_from_tranform(Extrinsics, K, mesh_scale, mesh_transformation, "Normals")
-            depth = ngp_renderer.get_image_from_tranform(Extrinsics, K, mesh_scale, mesh_transformation,"Depth")
+            rgb = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale, mesh_transformation, "Shade")
+            normal = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale, mesh_transformation, "Normals")
+            depth = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale, mesh_transformation,"Depth")
 
             # convert rgb to tensor
             rgb = torch.tensor(rgb).share_memory_()

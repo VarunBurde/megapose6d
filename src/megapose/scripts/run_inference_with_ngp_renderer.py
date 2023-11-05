@@ -190,22 +190,22 @@ def make_output_visualization(
     cv2.imwrite(os.path.join(example_dir , "visualizations" , "depth.png"), depth)
     cv2.imwrite(os.path.join(example_dir , "visualizations" , "normals.png"), normals)
 
-    # plotter = BokehPlotter()
-    #
-    # fig_rgb = plotter.plot_image(rgb)
-    # fig_mesh_overlay = plotter.plot_overlay(rgb, renderings.rgb)
-    # contour_overlay = make_contour_overlay(
-    #     rgb, renderings.rgb, dilate_iterations=1, color=(0, 255, 0)
-    # )["img"]
-    # fig_contour_overlay = plotter.plot_image(contour_overlay)
-    # fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
-    # vis_dir = example_dir / "visualizations"
-    # vis_dir.mkdir(exist_ok=True)
-    # export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
-    # export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
-    # export_png(fig_all, filename=vis_dir / "all_results.png")
-    # logger.info(f"Wrote visualizations to {vis_dir}.")
-    # return
+    plotter = BokehPlotter()
+
+    fig_rgb = plotter.plot_image(rgb)
+    fig_mesh_overlay = plotter.plot_overlay(rgb, renderings.rgb)
+    contour_overlay = make_contour_overlay(
+        rgb, renderings.rgb, dilate_iterations=1, color=(0, 255, 0)
+    )["img"]
+    fig_contour_overlay = plotter.plot_image(contour_overlay)
+    fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
+    vis_dir = example_dir / "visualizations"
+    vis_dir.mkdir(exist_ok=True)
+    export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
+    export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
+    export_png(fig_all, filename=vis_dir / "all_results.png")
+    logger.info(f"Wrote visualizations to {vis_dir}.")
+    return
 
 
 # def make_mesh_visualization(RigidObject) -> List[Image]:
@@ -242,5 +242,5 @@ if __name__ == "__main__":
     #     make_output_visualization(example_dir)
 
     make_detections_visualization(example_dir)
-    # run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
+    run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
     make_output_visualization(example_dir)
