@@ -383,7 +383,7 @@ class PosePredictor(nn.Module):
 
         render_mask = False
 
-        render_data = self.renderer.ngp_renderer(
+        render_data = self.renderer.render(
             labels=labels_mv,
             TCO=TCV_O.flatten(0, 1),
             K=KV.flatten(0, 1),
