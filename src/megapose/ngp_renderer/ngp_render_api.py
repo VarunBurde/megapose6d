@@ -71,7 +71,6 @@ class ngp_render():
         rotation = r.as_euler('zyx', degrees=True)
         print(rotation)
 
-
         C2W[:3, 3] /= nerf_scale
 
         # convert TCO transformation to mm scale
