@@ -6,8 +6,6 @@ import pyngp as ngp  # noqa
 import cv2
 import numpy as np
 
-
-
 class ngp_render():
     def __init__(self, weight_path, resolution):
         self.weight_path = weight_path
@@ -22,12 +20,6 @@ class ngp_render():
                                     [0, 0, 0, 1]
                                 ])
 
-    def increase_brghtness(self, image, value):
-        hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        hsv[:,:,2] += value
-        image = cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
-        return image
-
     def load_snapshot(self, snapshot_path):
         self.testbed.load_snapshot(snapshot_path)
 
@@ -39,29 +31,35 @@ class ngp_render():
         elif mode == 'Shade':
             self.testbed.render_mode = ngp.RenderMode.Shade
 
+    # def set_fov(self, K):
+    #     width = K[0,2] * 2
+    #     height = K[1,2] * 2
+    #     fl_x = K[0,0]
+    #     fl_y = K[1,1]
+    #
+    #     fov_x = np.arctan2(width / 2, fl_x) * 2 * 180 / np.pi
+    #     fov_y = np.arctan2(height / 2, fl_y) * 2 * 180 / np.pi
+    #     self.testbed.fov_xy = np.array([fov_x, fov_y])
+
+
     def set_fov(self, K):
+        width = self.resolution[0]
+        foclen = K[0, 0]
+        fov = np.degrees(2 * np.arctan2(width, 2 * foclen))
+        self.testbed.fov = fov
+        self.testbed.fov_axis = 0
 
-        width = K[0,2] * 2
-        height = K[1,2] * 2
-        fl_x = K[0,0]
-        fl_y = K[1,1]
+    def set_exposure(self, exposure):
+        self.testbed.exposure = exposure
 
-        fov_x = np.arctan2(width / 2, fl_x) * 2 * 180 / np.pi
-        fov_y = np.arctan2(height / 2, fl_y) * 2 * 180 / np.pi
-        self.testbed.fov_xy = np.array([fov_x, fov_y])
+    def get_image_from_tranform(self, Extrinsics, mesh_scale, mesh_transformation, mode, exposure = 0.0):
 
-
-    def get_image_from_tranform(self, Extrinsics, Intrinsics, mesh_scale, mesh_transformation,mode, value = 0):
-        self.set_fov(Intrinsics)
         self.set_renderer_mode(mode)
-        # self.testbed.exposure = 50.0
-
         camera_matrix = self.get_camera_matrix(Extrinsics,mesh_scale, mesh_transformation)
         self.testbed.set_nerf_camera_matrix(camera_matrix)
         image = self.testbed.render(self.resolution[0], self.resolution[1], self.screenshot_spp, True)
         image = np.array(image) * 255.0
         image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
-        image = self.increase_brghtness(image, value)
         return image
 
     def get_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):

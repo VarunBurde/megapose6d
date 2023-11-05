@@ -390,18 +390,20 @@ class Panda3dSceneRenderer:
                 mesh_transformation = np.array(world_tranformation['transformation'])
                 mesh_scale = world_tranformation["scale"]
                 ngp_renderer = ngp_render(weight_path, resolution)
+                ngp_renderer.set_fov(Intrinsics)
+                ngp_renderer.set_exposure(0.0)
 
-                rgb = ngp_renderer.get_image_from_tranform(Extrinsics, Intrinsics, mesh_scale,mesh_transformation, "Shade")
+                rgb = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale,mesh_transformation, "Shade")
                 rgb = np.array(rgb, dtype=np.uint8)
                 rendering = CameraRenderingData(rgb)
 
                 if render_normals:
-                    normal = ngp_renderer.get_image_from_tranform(Extrinsics, Intrinsics, mesh_scale,mesh_transformation, "Normals")
+                    normal = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale, mesh_transformation, "Normals")
                     normal = np.array(normal, dtype=np.uint8)
                     rendering.normals = normal
 
                 if render_depth:
-                    depth = ngp_renderer.get_image_from_tranform(Extrinsics, Intrinsics, mesh_scale,mesh_transformation, "Depth")
+                    depth = ngp_renderer.get_image_from_tranform(Extrinsics, mesh_scale,mesh_transformation, "Depth")
                     depth = np.array(depth, dtype=np.uint8)
                     rendering.depth = depth
 

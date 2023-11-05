@@ -407,7 +407,7 @@ class PosePredictor(nn.Module):
         # save all the images using opencv
         for i in range(len(rgb_images)):
             rgb = rgb_images[i] * 255.0
-            cv2.imwrite(os.path.join(loc, "rendered_image_rgb" + str(i) + ".png"), rgb)
+            cv2.imwrite(os.path.join(loc, "rendered_image_rgb_" + str(i) + ".png"), rgb)
 
         if self.render_normals:
             cat_list.append(render_data.normals)
