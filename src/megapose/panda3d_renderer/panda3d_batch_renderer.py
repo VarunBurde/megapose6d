@@ -154,7 +154,7 @@ class Panda3dBatchRenderer:
     def __init__(
         self,
         object_dataset: RigidObjectDataset,
-        n_workers: int = 2,
+        n_workers: int = 8,
         preload_cache: bool = True,
         split_objects: bool = False,
     ):
@@ -303,6 +303,7 @@ class Panda3dBatchRenderer:
 
         self._out_queue: torch.multiprocessing.Queue = torch.multiprocessing.Queue()
 
+
         for n in range(self._n_workers):
             if preload_cache:
                 preload_labels = set(object_labels_split[n].tolist())
@@ -352,12 +353,13 @@ class Panda3dBatchRenderer:
         ) -> BatchRenderOutput:
 
         TCO = TCO.detach().cpu().numpy()
-        K_cpu = K.detach().cpu().numpy()
+        Intrinsics = K.detach().cpu().numpy()
 
         root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
         weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
         world_tranformation = json.loads(open(os.path.join(root_path, "local_data", "examples", labels[0],"ngp_weight", "scale.json")).read())
-        world_tranformation = np.array(world_tranformation['transformation'])
+        mesh_transformation = np.array(world_tranformation['transformation'])
+        mesh_scale = world_tranformation["scale"]
 
         resolution = (resolution[1], resolution[0])
         ngp_renderer = ngp_render(weight_path, resolution)
@@ -366,30 +368,12 @@ class Panda3dBatchRenderer:
         list_normals = [None for _ in np.arange(len(labels))]
 
         for i in range(len(labels)):
-            # print("Rendering object", i)
+            Extrinsics = TCO[i]
+            K = Intrinsics[i]
 
-            # First scale the poses to real world scale
-            w2c = TCO[i]
-
-            # convert it to mm
-            w2c[:3, 3] = w2c[:3, 3] * 1000
-
-            # Transform the object to the gt mesh
-            w2c = np.matmul(w2c, world_tranformation)
-
-            # convert back to meters
-            w2c[:3, 3] = w2c[:3, 3] / 1000
-
-            c2w = np.linalg.inv(w2c)
-
-            transform_matrix = c2w
-            # print("Translation of transform matrix", transform_matrix[:3, 3])
-
-            K = K_cpu[i]
-            ngp_renderer.set_fov(K)
-            rgb = ngp_renderer.get_image_from_tranform(transform_matrix, "Shade")
-            normal = ngp_renderer.get_image_from_tranform(transform_matrix, "Normals")
-            depth = ngp_renderer.get_image_from_tranform(transform_matrix, "Depth")
+            rgb = ngp_renderer.get_image_from_tranform(Extrinsics, K, mesh_scale, mesh_transformation, "Shade")
+            normal = ngp_renderer.get_image_from_tranform(Extrinsics, K, mesh_scale, mesh_transformation, "Normals")
+            depth = ngp_renderer.get_image_from_tranform(Extrinsics, K, mesh_scale, mesh_transformation,"Depth")
 
             # convert rgb to tensor
             rgb = torch.tensor(rgb).share_memory_()

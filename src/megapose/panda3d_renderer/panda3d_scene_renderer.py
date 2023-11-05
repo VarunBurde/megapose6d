@@ -378,51 +378,30 @@ class Panda3dSceneRenderer:
 
         for camera in camera_datas:
             resolution = (camera.resolution[1], camera.resolution[0])
-            K = camera.K
+            Intrinsics = camera.K
             for object in object_datas:
-                Transformation = object.TWO.matrix
+                Extrinsics = object.TWO.matrix
                 label = object.label
-
-                # print("Transformation", Transformation)
-                # print("K", K)
-                # print("resolution", resolution)
-                # print("label", label)
 
                 root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
                 weight_path = os.path.join(root_path, "local_data", "examples", label, "ngp_weight", "base.ingp")
                 world_tranformation = json.loads(open(
                     os.path.join(root_path, "local_data", "examples", label, "ngp_weight", "scale.json")).read())
-                world_tranformation = np.array(world_tranformation['transformation'])
-
+                mesh_transformation = np.array(world_tranformation['transformation'])
+                mesh_scale = world_tranformation["scale"]
                 ngp_renderer = ngp_render(weight_path, resolution)
-                ngp_renderer.set_fov(K)
 
-                # convert it to mm
-                Transformation[:3, 3] = Transformation[:3, 3] * 1000
-
-                # Transform the object to the gt mesh
-                Transformation = np.matmul(Transformation, world_tranformation)
-
-                # convert back to meters
-                Transformation[:3, 3] = Transformation[:3, 3] / 1000
-
-                Transformation = np.linalg.inv(Transformation)
-
-                rotation = Rsci.from_matrix(Transformation[:3, :3])
-                # print("Transformation", Transformation[:3, 3])
-                # print("rotation", rotation.as_euler("xyz", degrees=True))
-                rgb = ngp_renderer.get_image_from_tranform(Transformation, "Shade")
+                rgb = ngp_renderer.get_image_from_tranform(Extrinsics, Intrinsics, mesh_scale,mesh_transformation, "Shade")
                 rgb = np.array(rgb, dtype=np.uint8)
-
                 rendering = CameraRenderingData(rgb)
 
                 if render_normals:
-                    normal = ngp_renderer.get_image_from_tranform(Transformation, "Normals")
+                    normal = ngp_renderer.get_image_from_tranform(Extrinsics, Intrinsics, mesh_scale,mesh_transformation, "Normals")
                     normal = np.array(normal, dtype=np.uint8)
                     rendering.normals = normal
 
                 if render_depth:
-                    depth = ngp_renderer.get_image_from_tranform(Transformation, "Depth")
+                    depth = ngp_renderer.get_image_from_tranform(Extrinsics, Intrinsics, mesh_scale,mesh_transformation, "Depth")
                     depth = np.array(depth, dtype=np.uint8)
                     rendering.depth = depth
 

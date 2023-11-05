@@ -277,6 +277,9 @@ def run_inference_newest(
         )
         save_predictions(example_dir, output, file, method)
 
+        if i == 10:
+            break
+
     return 
 
 def make_output_visualization(example_dir: Path, method: str) -> None:
@@ -551,7 +554,7 @@ def make_output_visualization_newest(
         # main()
 
 def main():
-    example_dir = Path("/home/varun/PycharmProjects/megapose6d_varun/local_data/examples",  global_object)
+    example_dir = Path("/home/testbed/PycharmProjects/megapose6d/local_data/examples",  global_object)
 
     model = "megapose-1.0-RGB-multi-hypothesis"
     # make_detections_visualization(example_dir)
