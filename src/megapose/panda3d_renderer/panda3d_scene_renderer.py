@@ -34,8 +34,7 @@ import numpy as np
 import panda3d as p3d
 from direct.showbase.ShowBase import ShowBase
 from tqdm import tqdm
-from scipy.spatial.transform import Rotation as Rsci
-
+from scipy.spatial.transform import Rotation as R
 
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset
@@ -230,6 +229,10 @@ class Panda3dSceneRenderer:
             if data_obj.remove_mesh_material:
                 obj_node.setMaterialOff(1)
             TWO = np_to_lmatrix4(data_obj.TWO.toHomogeneousMatrix())
+            # change this
+            # TWO = np.eye(4)
+            # TWO[:3,3] = data_obj.TWO.translation
+            # TWO = np_to_lmatrix4(TWO)
             obj_node.setMat(TWO)
             if data_obj.positioning_function is not None:
                 data_obj.positioning_function(root_node, obj_node)
@@ -262,7 +265,6 @@ class Panda3dSceneRenderer:
 
         self._app.graphicsEngine.renderFrame()
         self._app.graphicsEngine.syncFrame()
-
 
         renderings = []
         for camera in cameras:
@@ -320,6 +322,7 @@ class Panda3dSceneRenderer:
         setup_time = time.time() - start
 
         start = time.time()
+
         renderings = self.render_images(cameras, copy_arrays=copy_arrays, render_depth=render_depth)
         if render_normals:
             for object_node in object_nodes:
@@ -380,7 +383,7 @@ class Panda3dSceneRenderer:
             resolution = (camera.resolution[1], camera.resolution[0])
             Intrinsics = camera.K
             for object in object_datas:
-                Extrinsics = object.TWO.matrix
+                Extrinsics = object.TWO.toHomogeneousMatrix()
                 label = object.label
 
                 root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]

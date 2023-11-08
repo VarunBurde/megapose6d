@@ -1,5 +1,5 @@
 import sys
-pyngp_path = "/home/testbed/Projects/instant-ngp/build_megapose"
+pyngp_path = "/home/varun/PycharmProjects/instant-ngp/build_megapose"
 
 sys.path.append(pyngp_path)
 import pyngp as ngp  # noqa
@@ -44,7 +44,6 @@ class ngp_render():
         self.testbed.exposure = exposure
 
     def get_image_from_tranform(self, mode):
-
         self.set_renderer_mode(mode)
         image = self.testbed.render(self.resolution[0], self.resolution[1], self.screenshot_spp, True)
         image = cv2.cvtColor(image, cv2.COLOR_RGBA2RGB)
@@ -53,36 +52,26 @@ class ngp_render():
 
     def set_camera_matrix(self, Extrinsics, nerf_scale, mesh_transformation):
 
-        ## debug
-        r = R.from_matrix(Extrinsics[:3,:3])
-        rotation = r.as_euler('zyx', degrees=True)
-        print(rotation, Extrinsics[:3, 3])
+        #############################
+        # find initial camera matrix
+        r = R.from_euler('zyx', [-90,0,-90], degrees=True)
+        # W2C = np.eye(4)
+        # W2C[:3, :3] = r.as_matrix()
+        # # W2C[:3, 3] = np.array([0, 0, 1])
+        #
+        Extrinsics[:3, 3] /= 350.0
+        Extrinsics[:3, 3] *= 1000
+        W2C = Extrinsics
 
-        # rotation = R.from_euler("zyx",[180,-140,0], degrees=True)
-        rotation = R.from_euler("yzx",[160,180,0], degrees=True)
-        W2C = np.eye(4)
-        W2C[:3,:3] = rotation.as_matrix()
-        W2C[2, 3] = 0.4
+        W2C[:3,:3] = np.matmul(W2C[:3,:3], r.as_matrix())
 
         # convert to C2W
         C2W = np.linalg.inv(W2C)
 
-        r = R.from_matrix(C2W[:3,:3])
-        rotation = r.as_euler('zyx', degrees=True)
-        print(rotation)
-
-        C2W[:3, 3] /= nerf_scale
-
-        # convert TCO transformation to mm scale
-        C2W[:3,3] *= 1000
-
-        # C2W[0:3, 1:3] *= -1
-        # c2w = C2W[np.array([1, 0, 2, 3]), :]
-        # c2w[2, :] *= -1
-
+        # convert camera transformation to openGL coordinate system
         C2W = np.matmul(C2W, self.flip_mat)
+        # print("C2W", C2W)
 
-        camera_matrix= C2W[:-1, :]
+        camera_matrix = C2W[:3, :4]
 
         self.testbed.set_nerf_camera_matrix(camera_matrix)
-
