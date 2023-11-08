@@ -374,7 +374,7 @@ class Panda3dBatchRenderer:
             K_single = Intrinsics[i]
 
             ngp_renderer.set_fov(K_single)
-            ngp_renderer.set_exposure(2.0)
+            ngp_renderer.set_exposure(1.0)
             ngp_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
 
             rgb = ngp_renderer.get_image_from_tranform("Shade")
