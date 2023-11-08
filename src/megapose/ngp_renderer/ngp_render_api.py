@@ -1,5 +1,5 @@
 import sys
-pyngp_path = "/home/varun/PycharmProjects/instant-ngp/build_megapose"
+pyngp_path = "/home/testbed/Projects/instant-ngp/build_megapose"
 
 sys.path.append(pyngp_path)
 import pyngp as ngp  # noqa
