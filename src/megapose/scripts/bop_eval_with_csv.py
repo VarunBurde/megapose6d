@@ -31,9 +31,11 @@ from megapose.utils.load_model import NAMED_MODELS, load_named_model
 from megapose.utils.logging import get_logger, set_logging_level
 from megapose.visualization.bokeh_plotter import BokehPlotter
 from megapose.visualization.utils import make_contour_overlay
-
+from ycb_data_converter.load_files import loader
 logger = get_logger(__name__)
-
+import csv
+from tqdm import tqdm
+import json
 
 def load_observation(
     example_dir: Path,
@@ -131,26 +133,52 @@ def run_inference(
 ) -> None:
 
     model_info = NAMED_MODELS[model_name]
+    path = "/home/testbed/PycharmProjects/megapose6d/local_data/ycbv_test_all/test"
+    dataset = loader(path)
 
-    observation = load_observation_tensor(
-        example_dir, load_depth=model_info["requires_depth"]
-    ).cuda()
-    detections = load_detections(example_dir).cuda()
-    object_dataset = make_object_dataset(example_dir)
+    path2csv_file = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/refiner-final_ycbv-test.csv"
+    with open(path2csv_file, newline='') as csvfile:
+        csv_reader = csv.reader(csvfile, delimiter=',')
+        for e, row in enumerate(tqdm(csv_reader)):
+            if e == 0:
+                # logger.info(f"Header: {row}")
+                continue
 
-    logger.info(f"Loading model {model_name}.")
-    pose_estimator = load_named_model(model_name, object_dataset).cuda()
+            scene_id, img_id, obj_id, score, Rtx, Tv, time = row
+            Rot, TWO, T, K, resolution, bbox, rgb, depth = dataset.get_gt_RTK(scene_id, img_id, obj_id)
+            observation = ObservationTensor.from_numpy(rgb, depth, K).cuda()
+            # observation = load_observation_tensor(example_dir, load_depth=model_info["requires_depth"]).cuda()
 
-    logger.info(f"Running inference.")
-    output, extra = pose_estimator.run_inference_pipeline(
-        observation, detections=detections, **model_info["inference_parameters"]
+            object_data = [{"label": "02_cracker_box", "bbox_modal": bbox}]
+            object_data = [ObjectData.from_json(d) for d in object_data]
+            detections = make_detections_from_object_data(object_data).cuda()
+            # detections = load_detections(example_dir).cuda()
 
-    )
-    print(output.infos['pose_score'])
+            object_dataset = make_object_dataset(example_dir)
 
-    save_predictions(example_dir, output)
-    return
+            logger.info(f"Loading model {model_name}.")
+            pose_estimator = load_named_model(model_name, object_dataset).cuda()
 
+            logger.info(f"Running inference.")
+            output, extra = pose_estimator.run_inference_pipeline(
+                observation, detections=detections, **model_info["inference_parameters"]
+
+            )
+            score = output.infos['pose_score'][0]
+            labels = output.infos["label"][0]
+            poses = output.poses.cpu().numpy()
+            poses = poses[0]
+            time = extra["time"]
+
+            Rotation = poses[:3,:3]
+            Translation = poses[:3, 3]
+
+            data_ycb = {"score": score.tolist(), "labels": labels, "R": Rotation.tolist(), "T": Translation.tolist(), 'time': time}
+            json_path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ycb_output"
+            file_name = str(scene_id)  + "_" +  str(img_id) + ".json"
+            json_file_name = os.path.join(json_path,file_name)
+            with open(json_file_name, "w") as outfile:
+                json.dump(data_ycb, outfile, indent=4)
 
 def make_output_visualization(
     example_dir: Path,
@@ -208,21 +236,8 @@ def make_output_visualization(
     return
 
 
-# def make_mesh_visualization(RigidObject) -> List[Image]:
-#     return
-
-
-# def make_scene_visualization(CameraData, List[ObjectData]) -> List[Image]:
-#     return
-
-
-# def run_inference(example_dir, use_depth: bool = False):
-#     return
-
-
 if __name__ == "__main__":
     set_logging_level("info")
-    parser = argparse.ArgumentParser()
     example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
 
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
