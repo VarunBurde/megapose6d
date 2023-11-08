@@ -53,24 +53,25 @@ class ngp_render():
     def set_camera_matrix(self, Extrinsics, nerf_scale, mesh_transformation):
 
         #############################
-        # find initial camera matrix
+        # inital pose of renderer
         r = R.from_euler('zyx', [-90,0,-90], degrees=True)
-        # W2C = np.eye(4)
-        # W2C[:3, :3] = r.as_matrix()
-        # # W2C[:3, 3] = np.array([0, 0, 1])
-        #
-        Extrinsics[:3, 3] /= 350.0
-        Extrinsics[:3, 3] *= 1000
-        W2C = Extrinsics
 
-        W2C[:3,:3] = np.matmul(W2C[:3,:3], r.as_matrix())
+        # convert the scale to mm to apply the transformation
+        Extrinsics[:3, 3] *= 1000
+
+        # apply the alignment transformation
+        Extrinsics = np.matmul(Extrinsics, mesh_transformation)
+
+        # convert to nerf scale
+        Extrinsics[:3, 3] /= nerf_scale
+
+        Extrinsics[:3,:3] = np.matmul(Extrinsics[:3,:3], r.as_matrix())
 
         # convert to C2W
-        C2W = np.linalg.inv(W2C)
+        C2W = np.linalg.inv(Extrinsics)
 
         # convert camera transformation to openGL coordinate system
         C2W = np.matmul(C2W, self.flip_mat)
-        # print("C2W", C2W)
 
         camera_matrix = C2W[:3, :4]
 
