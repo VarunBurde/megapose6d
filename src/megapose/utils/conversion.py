@@ -18,6 +18,8 @@ limitations under the License.
 # Standard Library
 from typing import List, Tuple
 
+import numpy as np
+
 # MegaPose
 from megapose.datasets.scene_dataset import CameraData, ObjectData
 from megapose.panda3d_renderer.types import Panda3dCameraData, Panda3dObjectData

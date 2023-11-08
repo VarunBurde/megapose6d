@@ -383,6 +383,9 @@ class PosePredictor(nn.Module):
 
         render_mask = False
 
+        root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
+        loc = os.path.join(root_path, "local_data", "examples", labels[0], "rendered_data")
+
         render_data = self.renderer.render(
             labels=labels_mv,
             TCO=TCV_O.flatten(0, 1),
@@ -394,33 +397,66 @@ class PosePredictor(nn.Module):
             light_datas=light_datas,
         )
 
-
-        cat_list = []
-        cat_list.append(render_data.rgbs)
-
         rgb_images = render_data.rgbs.cpu().numpy()
-
         rgb_images = np.transpose(rgb_images, (0, 2, 3, 1))
-        root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-        loc = os.path.join(root_path, "local_data", "examples", labels[0], "rendered_data")
 
         # save all the images using opencv
         for i in range(len(rgb_images)):
             rgb = rgb_images[i] * 255.0
-            cv2.imwrite(os.path.join(loc, "rendered_image_rgb_" + str(i) + ".png"), rgb)
+            cv2.imwrite(os.path.join(loc, str(i)  + "_rendered_image_rgb" + ".png"), rgb)
 
-        if self.render_normals:
-            cat_list.append(render_data.normals)
+        render_data_ngp = self.renderer.ngp_renderer(
+            labels=labels_mv,
+            TCO=TCV_O.flatten(0, 1),
+            K=KV.flatten(0, 1),
+            render_mask=render_mask,
+            resolution=self.render_size,
+            render_normals=self.render_normals,
+            render_depth=self.render_depth,
+            light_datas=light_datas,
+        )
 
-        if self.render_depth:
-            cat_list.append(render_data.depths)
+        rgb_images_ngp = render_data_ngp.rgbs.cpu().numpy()
+        rgb_images_ngp = np.transpose(rgb_images_ngp, (0, 2, 3, 1))
 
-        renders = torch.cat(cat_list, dim=1)
-        n_channels = renders.shape[1]
+        for i in range(len(rgb_images_ngp)):
+            rgb_ngp = rgb_images_ngp[i] * 255.0
+            cv2.imwrite(os.path.join(loc, str(i) + "_rendered_image_rgb_ngp" + ".png"), rgb_ngp)
 
-        renders = renders.view(bsz, n_views, n_channels, *renders.shape[-2:]).flatten(1, 2)
+        renderer = "ngp"
+        if renderer == "ngp":
+            cat_list = []
+            cat_list.append(render_data_ngp.rgbs)
 
-        return renders  # [bsz, n_views*n_channels, H, W]
+            if self.render_normals:
+                cat_list.append(render_data_ngp.normals)
+
+            if self.render_depth:
+                cat_list.append(render_data_ngp.depths)
+
+            renders = torch.cat(cat_list, dim=1)
+            n_channels = renders.shape[1]
+
+            renders = renders.view(bsz, n_views, n_channels, *renders.shape[-2:]).flatten(1, 2)
+
+            return renders  # [bsz, n_views*n_channels, H, W]
+
+        if renderer == "ngp":
+            cat_list = []
+            cat_list.append(render_data.rgbs)
+
+            if self.render_normals:
+                cat_list.append(render_data.normals)
+
+            if self.render_depth:
+                cat_list.append(render_data.depths)
+
+            renders = torch.cat(cat_list, dim=1)
+            n_channels = renders.shape[1]
+
+            renders = renders.view(bsz, n_views, n_channels, *renders.shape[-2:]).flatten(1, 2)
+
+            return renders  # [bsz, n_views*n_channels, H, W]
 
     def normalize_images(
         self,

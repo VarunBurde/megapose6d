@@ -11,7 +11,7 @@ from bokeh.io import export_png
 from bokeh.plotting import gridplot
 from PIL import Image
 import cv2
-
+from scipy.spatial.transform import Rotation as R
 
 # MegaPose
 from megapose.config import LOCAL_DATA_DIR
@@ -145,7 +145,6 @@ def run_inference(
     output, extra = pose_estimator.run_inference_pipeline(
         observation, detections=detections, **model_info["inference_parameters"]
     )
-    # print(extra["scoring"])
 
     save_predictions(example_dir, output)
     return
@@ -159,6 +158,15 @@ def make_output_visualization(
     camera_data.TWC = Transform(np.eye(4))
     object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
     object_dataset = make_object_dataset(example_dir)
+
+    # file = open(example_dir / "outputs" / "object_data.json")
+    # data = json.load(file)
+    # megapose_quaternion = data[0]["TWO"][0]
+    # Rmatrix_megapose = R.from_quat(megapose_quaternion)
+    # rm = Rmatrix_megapose.as_euler('zyx', degrees=True)
+    # print("megapose euler", Rmatrix_megapose.as_matrix())
+    # print("meagpose rot", rm)
+    # print("tranaltion", data[0]["TWO"][1])
 
     renderer = Panda3dSceneRenderer(object_dataset)
 
