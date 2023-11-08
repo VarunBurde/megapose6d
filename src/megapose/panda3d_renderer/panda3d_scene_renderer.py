@@ -412,6 +412,7 @@ class Panda3dSceneRenderer:
                     depth = np.array(depth, dtype=np.uint8)
                     rendering.depth = depth
 
+
                 renderings.append(rendering)
 
         return renderings
