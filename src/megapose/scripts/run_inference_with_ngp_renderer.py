@@ -231,24 +231,7 @@ def make_output_visualization(
 if __name__ == "__main__":
     set_logging_level("info")
     parser = argparse.ArgumentParser()
-    # parser.add_argument("example_name")
-    # parser.add_argument("--model", type=str, default="megapose-1.0-RGB-multi-hypothesis")
-    # parser.add_argument("--vis-detections", action="store_true")
-    # parser.add_argument("--run-inference", action="store_true")
-    # parser.add_argument("--vis-outputs", action="store_true")
-    # args = parser.parse_args()
-
     example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
 
-    # if args.vis_detections:
-    #     make_detections_visualization(example_dir)
-    #
-    # if args.run_inference:
-    #     run_inference(example_dir, args.model)
-    #
-    # if args.vis_outputs:
-    #     make_output_visualization(example_dir)
-
-    # make_detections_visualization(example_dir)
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
     make_output_visualization(example_dir)
