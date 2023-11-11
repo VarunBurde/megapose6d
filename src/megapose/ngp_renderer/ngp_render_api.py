@@ -77,10 +77,12 @@ class ngp_render():
         # convert the scale to mm to apply the transformation
         Extrinsics[:3, 3] *= 1000
 
-        # mesh_transformation[:3,3] *= -1
-        #
+        # mesh_transformation[0,3] *= -1
+        mesh_transformation[1,3] *= -1
+        mesh_transformation[2,3] *= -1
+
         # # apply the alignment transformation
-        # Extrinsics = np.matmul(Extrinsics, mesh_transformation)
+        Extrinsics = np.matmul(Extrinsics, mesh_transformation)
 
         # convert back to m scale
         Extrinsics[:3,3] /=1000
