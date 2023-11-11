@@ -70,19 +70,15 @@ class ngp_render():
     def set_camera_matrix(self, Extrinsics, nerf_scale, mesh_transformation):
 
         #############################
-        # inital pose of renderer
-        r = R.from_euler('zyx', [-90,0,-90], degrees=True)
-        Extrinsics[:3,:3] = np.matmul(Extrinsics[:3,:3], r.as_matrix())
-
         # convert the scale to mm to apply the transformation
         Extrinsics[:3, 3] *= 1000
 
-        # mesh_transformation[0,3] *= -1
-        mesh_transformation[1,3] *= -1
-        mesh_transformation[2,3] *= -1
-
-        # # apply the alignment transformation
+        # apply the alignment transformation
         Extrinsics = np.matmul(Extrinsics, mesh_transformation)
+
+        # inital pose of renderer
+        r = R.from_euler('zyx', [-90,0,-90], degrees=True)
+        Extrinsics[:3,:3] = np.matmul(Extrinsics[:3,:3], r.as_matrix())
 
         # convert back to m scale
         Extrinsics[:3,3] /=1000

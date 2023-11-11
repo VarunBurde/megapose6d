@@ -385,6 +385,8 @@ class PosePredictor(nn.Module):
 
         root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
         loc = os.path.join(root_path, "local_data", "examples", labels[0], "rendered_data")
+        if not os.path.exists(loc):
+            os.mkdir(loc)
 
         render_data = self.renderer.render(
             labels=labels_mv,
