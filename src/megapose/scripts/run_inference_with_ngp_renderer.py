@@ -226,4 +226,4 @@ if __name__ == "__main__":
     example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
 
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-    # make_output_visualization(example_dir)
+    make_output_visualization(example_dir)
