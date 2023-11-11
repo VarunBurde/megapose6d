@@ -169,7 +169,6 @@ def run_inference(
             poses = output.poses.cpu().numpy()
             poses = poses[0]
             time = extra["time"]
-
             Rotation = poses[:3,:3]
             Translation = poses[:3, 3]
 

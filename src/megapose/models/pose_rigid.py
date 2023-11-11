@@ -424,6 +424,7 @@ class PosePredictor(nn.Module):
             cv2.imwrite(os.path.join(loc, str(i) + "_rendered_image_rgb_ngp" + ".png"), rgb_ngp)
 
         renderer = "ngp"
+
         if renderer == "ngp":
             cat_list = []
             cat_list.append(render_data_ngp.rgbs)
@@ -441,7 +442,7 @@ class PosePredictor(nn.Module):
 
             return renders  # [bsz, n_views*n_channels, H, W]
 
-        if renderer == "ngp":
+        else:
             cat_list = []
             cat_list.append(render_data.rgbs)
 
