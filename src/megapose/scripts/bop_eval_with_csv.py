@@ -126,6 +126,40 @@ def save_predictions(
     logger.info(f"Wrote predictions: {output_fn}")
     return
 
+def create_csv(example_dir):
+    # path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ngp_results.csv"
+    # json_files_path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ycb_output"
+    path = example_dir / "ngp_results.csv"
+    json_files_path = example_dir / "ycb_output"
+
+    if not os.path.exists(json_files_path):
+        os.mkdir(json_files_path)
+
+    row_list = ["scene_id",	"im_id",	"obj_id",	"score",	"R",	"t",	"time"]
+    with open(path, 'w', newline='') as file:
+        writer = csv.DictWriter(file, fieldnames=row_list)
+        writer.writeheader()
+
+        for file_name in os.listdir(json_files_path):
+            data = None
+            json_file_name = os.path.join(json_files_path,file_name)
+            with open(json_file_name, "r") as infile:
+                data = json.load(infile)
+
+
+            file_name = str(file_name).strip(".json").split('_')
+            object_id = data['labels'][0:2]
+            scene_id = file_name[0]
+            img_id = file_name[1]
+            score = data['score']
+            time_ec = data['time']
+            T = np.array(data['T']) * 1000
+            T = T.tolist()
+            T_csv = str(T).strip("[]")
+            R = data['R']
+            R = np.array(R).reshape(1,9).tolist()
+            R_csv = str(R).strip("[]")
+            writer.writerow({"scene_id": scene_id,"im_id": img_id,"obj_id": object_id,"score":score,"R":R_csv,"t":T_csv,"time": time_ec})
 
 def run_inference(
     example_dir: Path,
@@ -136,7 +170,10 @@ def run_inference(
     path = "/home/testbed/PycharmProjects/megapose6d/local_data/ycbv_test_all/test"
     dataset = loader(path)
 
-    path2csv_file = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/refiner-final_ycbv-test.csv"
+    # path2csv_file = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/refiner-final_ycbv-test.csv"
+    path2csv_file = example_dir / "refiner-final_ycbv-test.csv"
+    object_data_name = os.path.split(example_dir)[1]
+
     with open(path2csv_file, newline='') as csvfile:
         csv_reader = csv.reader(csvfile, delimiter=',')
         for e, row in enumerate(tqdm(csv_reader)):
@@ -149,7 +186,7 @@ def run_inference(
             observation = ObservationTensor.from_numpy(rgb, depth, K).cuda()
             # observation = load_observation_tensor(example_dir, load_depth=model_info["requires_depth"]).cuda()
 
-            object_data = [{"label": "02_cracker_box", "bbox_modal": bbox}]
+            object_data = [{"label": object_data_name, "bbox_modal": bbox}]
             object_data = [ObjectData.from_json(d) for d in object_data]
             detections = make_detections_from_object_data(object_data).cuda()
             # detections = load_detections(example_dir).cuda()
@@ -172,12 +209,26 @@ def run_inference(
             Rotation = poses[:3,:3]
             Translation = poses[:3, 3]
 
+            # r_nerf = R.from_matrix(Rotation)
+            # r_nerf = r_nerf.as_euler("zyx", degrees=True)
+            #
+            # r_gt = R.from_matrix(Rot)
+            # r_gt = r_gt.as_euler("zyx", degrees=True)
+
+            # print(r_nerf, "   ", r_gt)
+            # print(Rotation.reshape(1,9).tolist())
+            # print(Rot.reshape(1,9).tolist())
+
             data_ycb = {"score": score.tolist(), "labels": labels, "R": Rotation.tolist(), "T": Translation.tolist(), 'time': time}
-            json_path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ycb_output"
+            # json_path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ycb_output"
+            json_path = example_dir / "ycb_output"
+            json_path.mkdir(exist_ok=True)
+
             file_name = str(scene_id)  + "_" +  str(img_id) + ".json"
             json_file_name = os.path.join(json_path,file_name)
             with open(json_file_name, "w") as outfile:
                 json.dump(data_ycb, outfile, indent=4)
+            break
 
 def make_output_visualization(
     example_dir: Path,
@@ -237,7 +288,8 @@ def make_output_visualization(
 
 if __name__ == "__main__":
     set_logging_level("info")
-    example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
+    example_dir = LOCAL_DATA_DIR / "examples" / "10_banana"
 
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
     # make_output_visualization(example_dir)
+    # create_csv(example_dir)
