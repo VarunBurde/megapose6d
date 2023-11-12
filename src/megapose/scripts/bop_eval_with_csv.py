@@ -223,10 +223,11 @@ def make_output_visualization(
 ) -> None:
 
 
-    path = "/home/testbed/PycharmProjects/megapose6d/local_data/ycbv_test_all/test"
-    dataset = loader(path)
+    path = example_dir / "ngp_results.csv"
+    gt_path = "/home/testbed/PycharmProjects/megapose6d/local_data/ycbv_test_all/test"
+    dataset = loader(gt_path)
     object_data_name = os.path.split(example_dir)[1]
-    with open(path, newline='') as csvfile:
+    with (open(path, newline='') as csvfile):
         csv_reader = csv.reader(csvfile, delimiter=',')
         for e, row in enumerate(tqdm(csv_reader)):
             if e == 0:
@@ -234,19 +235,36 @@ def make_output_visualization(
                 continue
             scene_id, img_id, obj_id, score, Rtx, Tv, time = row
             Rot, TWO, T, K, resolution, bbox, rgb, depth = dataset.get_gt_RTK(scene_id, img_id, obj_id)
-            observation = ObservationTensor.from_numpy(rgb, depth, K).cuda()
+            print("makeing resutls for" , scene_id, img_id)
 
-            object_data = [{"label": object_data_name, "bbox_modal": bbox}]
-            object_data = [ObjectData.from_json(d) for d in object_data]
-            detections = make_detections_from_object_data(object_data).cuda()
-            # detections = load_detections(example_dir).cuda()
+            # rgb, _, camera_data = load_observation(example_dir, load_depth=False)
+            # print(camera_data)
+
+            camera_data = CameraData()
+            camera_data.TWC = Transform(np.eye(4))
+            camera_data.K = K
+            camera_data.resolution = tuple(resolution)
+
+            # print(camera_data)
+            # break
+            # object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
+
+            Rtx = list(Rtx.split(','))
+            Rtx = np.array(Rtx).reshape(3,3)
+            Tv = list(Tv.split(','))
+            Tv = np.array(Tv).reshape(3)
+
+            TWO_eval = np.eye(4)
+            TWO_eval[:3,:3] = Rtx
+            TWO_eval[:3,3] = Tv
+            TWO_eval[:3, 3] /= 1000
+            Transform_ngp = Transform(TWO_eval)
+
+            object_datas = list()
+            object_datas.append(ObjectData(label=object_data_name,TWO=Transform_ngp))
+
 
             object_dataset = make_object_dataset(example_dir)
-
-            rgb, _, camera_data = load_observation(example_dir, load_depth=False)
-            camera_data.TWC = Transform(np.eye(4))
-            object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
-            # object_dataset = make_object_dataset(example_dir)
             renderer = Panda3dSceneRenderer(object_dataset)
 
             camera_data, object_datas = convert_scene_observation_to_panda3d(camera_data, object_datas)
@@ -271,11 +289,17 @@ def make_output_visualization(
             depth = renderings.depth * 255.0
             normals = renderings.normals
 
-            rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGBA2BGR)
+            # cv2.imshow('frame',rgb_img)
+            # cv2.waitKey(0)
 
-            cv2.imwrite(os.path.join(example_dir , "visualizations", scene_id + obj_id , "rgb.png"), rgb_img)
-            cv2.imwrite(os.path.join(example_dir , "visualizations" , scene_id + obj_id, "depth.png"), depth)
-            cv2.imwrite(os.path.join(example_dir , "visualizations" , scene_id + obj_id, "normals.png"), normals)
+            rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGBA2BGR)
+            loc_scene = scene_id + "_" + img_id
+
+            os.makedirs(example_dir / "visualizations" , exist_ok=True)
+
+            # cv2.imwrite(os.path.join(example_dir , "visualizations", loc_scene , "rgb.png"), rgb_img)
+            # cv2.imwrite(os.path.join(example_dir , "visualizations" , loc_scene, "depth.png"), depth)
+            # cv2.imwrite(os.path.join(example_dir , "visualizations" , loc_scene, "normals.png"), normals)
 
             plotter = BokehPlotter()
 
@@ -286,13 +310,97 @@ def make_output_visualization(
             )["img"]
             fig_contour_overlay = plotter.plot_image(contour_overlay)
             fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
-            vis_dir = example_dir / "visualizations" / scene_id + obj_id
+
+            vis_dir = example_dir / "visualizations"
             vis_dir.mkdir(exist_ok=True)
-            export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
-            export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
-            export_png(fig_all, filename=vis_dir / "all_results.png")
+            # export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
+            # export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
+            result_name = loc_scene + "_NGP" + ".png"
+            export_png(fig_all, filename=vis_dir / result_name)
             logger.info(f"Wrote visualizations to {vis_dir}.")
-            return
+
+
+            ## for gt
+
+            # Rot, TWO, T, K, resolution, bbox, rgb, depth
+            # Rtx = list(Rtx.split(','))
+            # Rtx = np.array(Rtx).reshape(3, 3)
+            # Tv = list(Tv.split(','))
+            # Tv = np.array(Tv).reshape(3)
+
+            camera_data_gt = CameraData()
+            camera_data_gt.TWC = Transform(np.eye(4))
+            camera_data_gt.K = K
+            camera_data_gt.resolution = tuple(resolution)
+
+            TWO_eval_gt = np.eye(4)
+            TWO_eval_gt[:3, :3] = Rot
+            TWO_eval_gt[:3, 3] = T
+            # TWO_eval_gt[:3, 3] /= 1000
+            Transform_gt = Transform(TWO_eval_gt)
+
+            object_datas_gt = list()
+            object_datas_gt.append(ObjectData(label=object_data_name, TWO=Transform_gt))
+
+            object_dataset = make_object_dataset(example_dir)
+            renderer = Panda3dSceneRenderer(object_dataset)
+
+            camera_data, object_datas = convert_scene_observation_to_panda3d(camera_data_gt, object_datas_gt)
+            light_datas = [
+                Panda3dLightData(
+                    light_type="ambient",
+                    color=((1.0, 1.0, 1.0, 1)),
+                ),
+            ]
+
+            renderings = renderer.render_scene(
+                object_datas,
+                [camera_data],
+                light_datas,
+                render_depth=True,
+                render_binary_mask=False,
+                render_normals=True,
+                copy_arrays=True,
+            )[0]
+
+            rgb_img = renderings.rgb
+            depth = renderings.depth * 255.0
+            normals = renderings.normals
+
+            # cv2.imshow('frame',rgb_img)
+            # cv2.waitKey(0)
+
+            rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGBA2BGR)
+            loc_scene = scene_id + "_" + img_id
+
+            os.makedirs(example_dir / "visualizations", exist_ok=True)
+
+            # cv2.imwrite(os.path.join(example_dir , "visualizations", loc_scene , "rgb.png"), rgb_img)
+            # cv2.imwrite(os.path.join(example_dir , "visualizations" , loc_scene, "depth.png"), depth)
+            # cv2.imwrite(os.path.join(example_dir , "visualizations" , loc_scene, "normals.png"), normals)
+
+            plotter = BokehPlotter()
+
+            fig_rgb = plotter.plot_image(rgb)
+            fig_mesh_overlay = plotter.plot_overlay(rgb, renderings.rgb)
+            contour_overlay = make_contour_overlay(
+                rgb, renderings.rgb, dilate_iterations=1, color=(0, 255, 0)
+            )["img"]
+            fig_contour_overlay = plotter.plot_image(contour_overlay)
+            fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
+
+            vis_dir = example_dir / "visualizations"
+            vis_dir.mkdir(exist_ok=True)
+            # export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
+            # export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
+            result_name = loc_scene + "_GT" + ".png"
+            export_png(fig_all, filename=vis_dir / result_name)
+            logger.info(f"Wrote visualizations to {vis_dir}.")
+
+            break
+
+
+
 
 
 if __name__ == "__main__":
