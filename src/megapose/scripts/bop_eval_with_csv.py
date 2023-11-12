@@ -267,6 +267,18 @@ def make_output_visualization(
             object_dataset = make_object_dataset(example_dir)
             renderer = Panda3dSceneRenderer(object_dataset)
 
+            vis_dir = example_dir / "visualizations"
+            vis_dir.mkdir(exist_ok=True)
+
+            loc_scene = scene_id + "_" + img_id
+            result_name = loc_scene + "_NGP" + ".png"
+            img_path_exist_check = os.path.join(vis_dir, result_name)
+
+            if os.path.exists(img_path_exist_check):
+                print("skipping")
+                continue
+
+
             camera_data, object_datas = convert_scene_observation_to_panda3d(camera_data, object_datas)
             light_datas = [
                 Panda3dLightData(
@@ -285,22 +297,6 @@ def make_output_visualization(
                 copy_arrays=True,
             )[0]
 
-            rgb_img = renderings.rgb
-            depth = renderings.depth * 255.0
-            normals = renderings.normals
-
-            # cv2.imshow('frame',rgb_img)
-            # cv2.waitKey(0)
-
-            rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGBA2BGR)
-            loc_scene = scene_id + "_" + img_id
-
-            os.makedirs(example_dir / "visualizations" , exist_ok=True)
-
-            # cv2.imwrite(os.path.join(example_dir , "visualizations", loc_scene , "rgb.png"), rgb_img)
-            # cv2.imwrite(os.path.join(example_dir , "visualizations" , loc_scene, "depth.png"), depth)
-            # cv2.imwrite(os.path.join(example_dir , "visualizations" , loc_scene, "normals.png"), normals)
-
             plotter = BokehPlotter()
 
             fig_rgb = plotter.plot_image(rgb)
@@ -311,11 +307,10 @@ def make_output_visualization(
             fig_contour_overlay = plotter.plot_image(contour_overlay)
             fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
 
-            vis_dir = example_dir / "visualizations"
-            vis_dir.mkdir(exist_ok=True)
+
             # export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
             # export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
-            result_name = loc_scene + "_NGP" + ".png"
+
             export_png(fig_all, filename=vis_dir / result_name)
             logger.info(f"Wrote visualizations to {vis_dir}.")
 
@@ -345,6 +340,16 @@ def make_output_visualization(
             object_dataset = make_object_dataset(example_dir)
             renderer = Panda3dSceneRenderer(object_dataset)
 
+            os.makedirs(example_dir / "visualizations", exist_ok=True)
+
+            loc_scene = scene_id + "_" + img_id
+            result_name = loc_scene + "_GT" + ".png"
+            img_path_exist_check = os.path.join(vis_dir, result_name)
+
+            if os.path.exists(img_path_exist_check):
+                print("skipping")
+                continue
+
             camera_data, object_datas = convert_scene_observation_to_panda3d(camera_data_gt, object_datas_gt)
             light_datas = [
                 Panda3dLightData(
@@ -363,21 +368,6 @@ def make_output_visualization(
                 copy_arrays=True,
             )[0]
 
-            rgb_img = renderings.rgb
-            depth = renderings.depth * 255.0
-            normals = renderings.normals
-
-            # cv2.imshow('frame',rgb_img)
-            # cv2.waitKey(0)
-
-            rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGBA2BGR)
-            loc_scene = scene_id + "_" + img_id
-
-            os.makedirs(example_dir / "visualizations", exist_ok=True)
-
-            # cv2.imwrite(os.path.join(example_dir , "visualizations", loc_scene , "rgb.png"), rgb_img)
-            # cv2.imwrite(os.path.join(example_dir , "visualizations" , loc_scene, "depth.png"), depth)
-            # cv2.imwrite(os.path.join(example_dir , "visualizations" , loc_scene, "normals.png"), normals)
 
             plotter = BokehPlotter()
 
@@ -389,19 +379,11 @@ def make_output_visualization(
             fig_contour_overlay = plotter.plot_image(contour_overlay)
             fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
 
-            vis_dir = example_dir / "visualizations"
-            vis_dir.mkdir(exist_ok=True)
             # export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
             # export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
-            result_name = loc_scene + "_GT" + ".png"
+
             export_png(fig_all, filename=vis_dir / result_name)
             logger.info(f"Wrote visualizations to {vis_dir}.")
-
-            break
-
-
-
-
 
 if __name__ == "__main__":
     set_logging_level("info")
@@ -412,4 +394,8 @@ if __name__ == "__main__":
         example_dir = LOCAL_DATA_DIR / "examples" / object
         # run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
         # create_csv(example_dir)
-        make_output_visualization(example_dir)
+        try:
+            make_output_visualization(example_dir)
+        except:
+            make_output_visualization(example_dir)
+
