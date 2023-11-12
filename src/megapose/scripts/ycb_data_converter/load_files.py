@@ -48,7 +48,8 @@ class loader:
         img = np.array(Image.open(img_path), dtype=np.uint8)
         depth = np.array(Image.open(depth_img_path), dtype=np.float32) / 1000
         H, W, C = img.shape
-        return [H,C], img, depth
+
+        return [H,W], img, depth
 
     def get_bbox(self, scene_id, img_id, obj_id):
         scene_id = str(scene_id).zfill(6)
