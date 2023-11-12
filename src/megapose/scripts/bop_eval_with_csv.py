@@ -127,8 +127,6 @@ def save_predictions(
     return
 
 def create_csv(example_dir):
-    # path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ngp_results.csv"
-    # json_files_path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ycb_output"
     path = example_dir / "ngp_results.csv"
     json_files_path = example_dir / "ycb_output"
 
@@ -209,16 +207,6 @@ def run_inference(
             Rotation = poses[:3,:3]
             Translation = poses[:3, 3]
 
-            # r_nerf = R.from_matrix(Rotation)
-            # r_nerf = r_nerf.as_euler("zyx", degrees=True)
-            #
-            # r_gt = R.from_matrix(Rot)
-            # r_gt = r_gt.as_euler("zyx", degrees=True)
-
-            # print(r_nerf, "   ", r_gt)
-            # print(Rotation.reshape(1,9).tolist())
-            # print(Rot.reshape(1,9).tolist())
-
             data_ycb = {"score": score.tolist(), "labels": labels, "R": Rotation.tolist(), "T": Translation.tolist(), 'time': time}
             # json_path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ycb_output"
             json_path = example_dir / "ycb_output"
@@ -228,68 +216,92 @@ def run_inference(
             json_file_name = os.path.join(json_path,file_name)
             with open(json_file_name, "w") as outfile:
                 json.dump(data_ycb, outfile, indent=4)
-            break
+
 
 def make_output_visualization(
     example_dir: Path,
 ) -> None:
 
-    rgb, _, camera_data = load_observation(example_dir, load_depth=False)
-    camera_data.TWC = Transform(np.eye(4))
-    object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
-    object_dataset = make_object_dataset(example_dir)
-    renderer = Panda3dSceneRenderer(object_dataset)
 
-    camera_data, object_datas = convert_scene_observation_to_panda3d(camera_data, object_datas)
-    light_datas = [
-        Panda3dLightData(
-            light_type="ambient",
-            color=((1.0, 1.0, 1.0, 1)),
-        ),
-    ]
+    path = "/home/testbed/PycharmProjects/megapose6d/local_data/ycbv_test_all/test"
+    dataset = loader(path)
+    object_data_name = os.path.split(example_dir)[1]
+    with open(path, newline='') as csvfile:
+        csv_reader = csv.reader(csvfile, delimiter=',')
+        for e, row in enumerate(tqdm(csv_reader)):
+            if e == 0:
+                # logger.info(f"Header: {row}")
+                continue
+            scene_id, img_id, obj_id, score, Rtx, Tv, time = row
+            Rot, TWO, T, K, resolution, bbox, rgb, depth = dataset.get_gt_RTK(scene_id, img_id, obj_id)
+            observation = ObservationTensor.from_numpy(rgb, depth, K).cuda()
 
-    renderings = renderer.render_scene_ngp(
-        object_datas,
-        [camera_data],
-        light_datas,
-        render_depth=True,
-        render_binary_mask=False,
-        render_normals=True,
-        copy_arrays=True,
-    )[0]
+            object_data = [{"label": object_data_name, "bbox_modal": bbox}]
+            object_data = [ObjectData.from_json(d) for d in object_data]
+            detections = make_detections_from_object_data(object_data).cuda()
+            # detections = load_detections(example_dir).cuda()
 
-    rgb_img = renderings.rgb
-    depth = renderings.depth * 255.0
-    normals = renderings.normals
+            object_dataset = make_object_dataset(example_dir)
 
-    rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGBA2BGR)
+            rgb, _, camera_data = load_observation(example_dir, load_depth=False)
+            camera_data.TWC = Transform(np.eye(4))
+            object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
+            # object_dataset = make_object_dataset(example_dir)
+            renderer = Panda3dSceneRenderer(object_dataset)
 
-    cv2.imwrite(os.path.join(example_dir , "visualizations" , "rgb.png"), rgb_img)
-    cv2.imwrite(os.path.join(example_dir , "visualizations" , "depth.png"), depth)
-    cv2.imwrite(os.path.join(example_dir , "visualizations" , "normals.png"), normals)
+            camera_data, object_datas = convert_scene_observation_to_panda3d(camera_data, object_datas)
+            light_datas = [
+                Panda3dLightData(
+                    light_type="ambient",
+                    color=((1.0, 1.0, 1.0, 1)),
+                ),
+            ]
 
-    plotter = BokehPlotter()
+            renderings = renderer.render_scene_ngp(
+                object_datas,
+                [camera_data],
+                light_datas,
+                render_depth=True,
+                render_binary_mask=False,
+                render_normals=True,
+                copy_arrays=True,
+            )[0]
 
-    fig_rgb = plotter.plot_image(rgb)
-    fig_mesh_overlay = plotter.plot_overlay(rgb, renderings.rgb)
-    contour_overlay = make_contour_overlay(
-        rgb, renderings.rgb, dilate_iterations=1, color=(0, 255, 0)
-    )["img"]
-    fig_contour_overlay = plotter.plot_image(contour_overlay)
-    fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
-    vis_dir = example_dir / "visualizations"
-    vis_dir.mkdir(exist_ok=True)
-    export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
-    export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
-    export_png(fig_all, filename=vis_dir / "all_results.png")
-    logger.info(f"Wrote visualizations to {vis_dir}.")
-    return
+            rgb_img = renderings.rgb
+            depth = renderings.depth * 255.0
+            normals = renderings.normals
+
+            rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGBA2BGR)
+
+            cv2.imwrite(os.path.join(example_dir , "visualizations", scene_id + obj_id , "rgb.png"), rgb_img)
+            cv2.imwrite(os.path.join(example_dir , "visualizations" , scene_id + obj_id, "depth.png"), depth)
+            cv2.imwrite(os.path.join(example_dir , "visualizations" , scene_id + obj_id, "normals.png"), normals)
+
+            plotter = BokehPlotter()
+
+            fig_rgb = plotter.plot_image(rgb)
+            fig_mesh_overlay = plotter.plot_overlay(rgb, renderings.rgb)
+            contour_overlay = make_contour_overlay(
+                rgb, renderings.rgb, dilate_iterations=1, color=(0, 255, 0)
+            )["img"]
+            fig_contour_overlay = plotter.plot_image(contour_overlay)
+            fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
+            vis_dir = example_dir / "visualizations" / scene_id + obj_id
+            vis_dir.mkdir(exist_ok=True)
+            export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
+            export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
+            export_png(fig_all, filename=vis_dir / "all_results.png")
+            logger.info(f"Wrote visualizations to {vis_dir}.")
+            return
 
 
 if __name__ == "__main__":
     set_logging_level("info")
-    example_dir = LOCAL_DATA_DIR / "examples" / "10_banana"
+    objects = ["02_cracker_box", "04_tomatoe_soup_can", "05_mustard_bottle", "10_banana", "14_mug", "15_drill","17_scissors"]
 
-    run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-    # make_output_visualization(example_dir)
-    # create_csv(example_dir)
+    for object in objects:
+        print("running on object :", object)
+        example_dir = LOCAL_DATA_DIR / "examples" / object
+        # run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
+        # create_csv(example_dir)
+        make_output_visualization(example_dir)
