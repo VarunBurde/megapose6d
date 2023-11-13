@@ -20,13 +20,15 @@ def combine_csv(csv_files, outpath):
                     scene_id, img_id, obj_id, score, Rtx, Tv, time = row
                     Rtx = Rtx.replace(","," ")
                     Tv = Tv.replace(","," ")
-                    writer.writerow({"scene_id": scene_id,"im_id": img_id,"obj_id": obj_id,"score":score,"R":Rtx,"t":Tv,"time": time})
+                    writer.writerow({"scene_id": scene_id,"im_id": img_id,"obj_id": obj_id,"score":score,"R":Rtx,"t":Tv,"time": str(-1)})
 
 
 if __name__ == '__main__':
 
-    objects = ["02_cracker_box", "04_tomatoe_soup_can", "05_mustard_bottle", "10_banana", "14_mug", "15_drill",
-               "17_scissors"]
+    objects = ["01_master_chef_can", "02_cracker_box", "03_sugar_box", "04_tomatoe_soup_can", "05_mustard_bottle",
+               "06_tuna_fish_can", "07_pudding_box", "08_gelatin_box", "09_potted_meat_can", "10_banana",
+               "11_pitcher_base", "12_bleach_cleanser", "13_bowl", "14_mug", "15_drill", "16_wood_block", "17_scissors",
+               "18_large_marker", "19_larger_clamp", "20_extra_large_clamp", "21_foam_brick"]
     csv_files = []
     outpath = LOCAL_DATA_DIR/ "examples" / "csv_results" / "combine.csv"
     for object in objects:

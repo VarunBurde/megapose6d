@@ -184,6 +184,14 @@ def run_inference(
             observation = ObservationTensor.from_numpy(rgb, depth, K).cuda()
             # observation = load_observation_tensor(example_dir, load_depth=model_info["requires_depth"]).cuda()
 
+            json_path = example_dir / "ycb_output"
+            json_path.mkdir(exist_ok=True)
+            file_name = str(scene_id)  + "_" +  str(img_id) + ".json"
+            json_file_name = os.path.join(json_path,file_name)
+
+            if os.path.exists(json_file_name):
+                continue
+
             object_data = [{"label": object_data_name, "bbox_modal": bbox}]
             object_data = [ObjectData.from_json(d) for d in object_data]
             detections = make_detections_from_object_data(object_data).cuda()
@@ -209,11 +217,7 @@ def run_inference(
 
             data_ycb = {"score": score.tolist(), "labels": labels, "R": Rotation.tolist(), "T": Translation.tolist(), 'time': time}
             # json_path = "/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ycb_output"
-            json_path = example_dir / "ycb_output"
-            json_path.mkdir(exist_ok=True)
 
-            file_name = str(scene_id)  + "_" +  str(img_id) + ".json"
-            json_file_name = os.path.join(json_path,file_name)
             with open(json_file_name, "w") as outfile:
                 json.dump(data_ycb, outfile, indent=4)
 
@@ -227,6 +231,8 @@ def make_output_visualization(
     gt_path = "/home/testbed/PycharmProjects/megapose6d/local_data/ycbv_test_all/test"
     dataset = loader(gt_path)
     object_data_name = os.path.split(example_dir)[1]
+
+    i = 0
     with (open(path, newline='') as csvfile):
         csv_reader = csv.reader(csvfile, delimiter=',')
         for e, row in enumerate(tqdm(csv_reader)):
@@ -385,17 +391,22 @@ def make_output_visualization(
             export_png(fig_all, filename=vis_dir / result_name)
             logger.info(f"Wrote visualizations to {vis_dir}.")
 
+            i = i + 1
+            if i == 20:
+                break
+
 if __name__ == "__main__":
     set_logging_level("info")
-    objects = ["02_cracker_box", "04_tomatoe_soup_can", "05_mustard_bottle", "10_banana", "14_mug", "15_drill","17_scissors"]
+    objects = ["01_master_chef_can", "02_cracker_box", "03_sugar_box", "04_tomatoe_soup_can", "05_mustard_bottle",
+               "06_tuna_fish_can", "07_pudding_box", "08_gelatin_box", "09_potted_meat_can", "10_banana",
+               "11_pitcher_base", "12_bleach_cleanser", "13_bowl", "14_mug", "15_drill", "16_wood_block", "17_scissors",
+               "18_large_marker", "19_larger_clamp", "20_extra_large_clamp", "21_foam_brick"]
 
     for object in objects:
         print("running on object :", object)
         example_dir = LOCAL_DATA_DIR / "examples" / object
-        # run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-        # create_csv(example_dir)
-        try:
-            make_output_visualization(example_dir)
-        except:
-            make_output_visualization(example_dir)
+        run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
+        create_csv(example_dir)
+        make_output_visualization(example_dir)
+
 
