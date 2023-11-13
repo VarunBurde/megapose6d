@@ -405,8 +405,8 @@ if __name__ == "__main__":
     for object in objects:
         print("running on object :", object)
         example_dir = LOCAL_DATA_DIR / "examples" / object
-        run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-        create_csv(example_dir)
+        # run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
+        # create_csv(example_dir)
         make_output_visualization(example_dir)
 
 
