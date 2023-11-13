@@ -1,0 +1,37 @@
+import csv
+from megapose.config import LOCAL_DATA_DIR
+import os
+from tqdm import tqdm
+
+def combine_csv(csv_files, outpath):
+    header_saved = False
+    row_list = ["scene_id",	"im_id",	"obj_id",	"score",	"R",	"t",	"time"]
+    with open(outpath, 'w', newline='') as fout:
+        writer = csv.writer(fout)
+        writer = csv.DictWriter(fout, fieldnames=row_list)
+        writer.writeheader()
+        for filename in csv_files:
+            with open(filename, newline='') as csvfile:
+                csv_reader = csv.reader(csvfile, delimiter=',')
+                for e, row in enumerate(tqdm(csv_reader)):
+                    if e == 0:
+                        # logger.info(f"Header: {row}")
+                        continue
+                    scene_id, img_id, obj_id, score, Rtx, Tv, time = row
+                    Rtx = Rtx.replace(","," ")
+                    Tv = Tv.replace(","," ")
+                    writer.writerow({"scene_id": scene_id,"im_id": img_id,"obj_id": obj_id,"score":score,"R":Rtx,"t":Tv,"time": time})
+
+
+if __name__ == '__main__':
+
+    objects = ["02_cracker_box", "04_tomatoe_soup_can", "05_mustard_bottle", "10_banana", "14_mug", "15_drill",
+               "17_scissors"]
+    csv_files = []
+    outpath = LOCAL_DATA_DIR/ "examples" / "csv_results" / "combine.csv"
+    for object in objects:
+        print("running on object :", object)
+        example_dir = LOCAL_DATA_DIR / "examples" / object
+        csv_file = os.path.join(example_dir,  'ngp_results.csv')
+        csv_files.append(csv_file)
+    combine_csv(csv_files, outpath)
