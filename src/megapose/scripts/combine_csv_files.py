@@ -35,5 +35,6 @@ if __name__ == '__main__':
         print("running on object :", object)
         example_dir = LOCAL_DATA_DIR / "examples" / object
         csv_file = os.path.join(example_dir,  'ngp_results.csv')
-        csv_files.append(csv_file)
+        if os.path.exists(csv_file):
+            csv_files.append(csv_file)
     combine_csv(csv_files, outpath)
