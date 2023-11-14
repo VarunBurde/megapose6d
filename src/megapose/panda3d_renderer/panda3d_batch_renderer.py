@@ -40,7 +40,7 @@ from .types import (
     Panda3dObjectData,
     Resolution,
 )
-
+import time
 logger = get_logger(__name__)
 
 
@@ -367,7 +367,6 @@ class Panda3dBatchRenderer:
 
         resolution = (resolution[1], resolution[0])
         ngp_renderer = ngp_render(weight_path, resolution)
-
 
         for i in range(len(labels)):
             Extrinsics = TCO[i]

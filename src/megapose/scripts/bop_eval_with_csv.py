@@ -126,8 +126,12 @@ def save_predictions(
     logger.info(f"Wrote predictions: {output_fn}")
     return
 
-def create_csv(example_dir):
-    path = example_dir / "ngp_results.csv"
+def create_csv(example_dir, object_name):
+
+    filename = object_name + "_final.csv"
+
+
+    path = LOCAL_DATA_DIR / "examples"/ "csv_results" / filename
     json_files_path = example_dir / "ycb_output"
 
     if not os.path.exists(json_files_path):
@@ -406,7 +410,7 @@ if __name__ == "__main__":
         print("running on object :", object)
         example_dir = LOCAL_DATA_DIR / "examples" / object
         # run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-        # create_csv(example_dir)
-        make_output_visualization(example_dir)
+        create_csv(example_dir, object)
+        # make_output_visualization(example_dir)
 
 
