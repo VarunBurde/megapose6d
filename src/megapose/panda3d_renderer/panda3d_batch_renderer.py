@@ -22,14 +22,15 @@ import json
 import numpy as np
 import torch
 import torch.multiprocessing
+import time
 
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset
 from megapose.lib3d.transform import Transform
 from megapose.lib3d.transform_ops import invert_transform_matrices
 from megapose.utils.logging import get_logger
-from megapose.ngp_renderer.ngp_render_api import ngp_render
-
+# from megapose.ngp_renderer.ngp_render_api import ngp_render
+from ..gaussian_renderer.gaussian_renderer_api import Gaussian_Renderer_API
 
 # Local Folder
 from .panda3d_scene_renderer import Panda3dSceneRenderer
@@ -366,8 +367,9 @@ class Panda3dBatchRenderer:
         list_normals = [None for _ in np.arange(len(labels))]
 
         resolution = (resolution[1], resolution[0])
+        now = time.time()
         ngp_renderer = ngp_render(weight_path, resolution)
-
+        print("ngp_render init time: ", time.time() - now)
 
         for i in range(len(labels)):
             Extrinsics = TCO[i]
@@ -412,3 +414,77 @@ class Panda3dBatchRenderer:
             normals=normals,
         )
 
+    def gaussian_renderer(
+                self,
+                labels: List[str],
+                TCO: torch.Tensor,
+                K: torch.Tensor,
+                light_datas: List[List[Panda3dLightData]],
+                resolution: Resolution,
+                render_depth: bool = False,
+                render_mask: bool = False,
+                render_normals: bool = False,
+        ) -> BatchRenderOutput:
+
+        TCO = TCO.detach().cpu().numpy()
+        Intrinsics = K.detach().cpu().numpy()
+
+        root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
+        # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
+        # world_tranformation = json.loads(open(os.path.join(root_path, "local_data", "examples", labels[0],"ngp_weight", "scale.json")).read())
+        # mesh_transformation = np.array(world_tranformation['transformation'])
+        # mesh_scale = world_tranformation["scale"]
+        weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "gaussian_weight", "base.ingp")
+        mesh_scale = 1.0
+        mesh_transformation = np.eye(4)
+
+        list_rgbs = [None for _ in np.arange(len(labels))]
+        list_depths = [None for _ in np.arange(len(labels))]
+        list_normals = [None for _ in np.arange(len(labels))]
+
+        resolution = (resolution[1], resolution[0])
+        now = time.time()
+        gaus_renderer = Gaussian_Renderer_API(weight_path, resolution)
+        print("ngp_render init time: ", time.time() - now)
+
+        for i in range(len(labels)):
+            Extrinsics = TCO[i]
+            K_single = Intrinsics[i]
+
+            gaus_renderer.set_fov(K_single)
+            gaus_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
+
+            rgb = gaus_renderer.get_image_from_tranform()
+            normal = gaus_renderer.get_image_from_tranform()
+            depth = gaus_renderer.get_image_from_tranform()
+
+
+            # convert rgb to tensor
+            rgb = torch.tensor(rgb).share_memory_()
+            normal = torch.tensor(normal).share_memory_()
+            depth = torch.tensor(depth).share_memory_()
+
+            list_rgbs[i] = rgb
+            list_normals[i] = normal
+            list_depths[i] = depth
+
+        rgbs = torch.stack(list_rgbs).pin_memory().cuda(non_blocking=True)
+        rgbs = rgbs.float().permute(0, 3, 1, 2)/255
+
+        if render_depth:
+            depths = torch.stack(list_depths).pin_memory().cuda(non_blocking=True)
+            depths = depths.float().permute(0, 3, 1, 2)
+        else:
+            depths = None
+
+        if render_normals:
+            normals = torch.stack(list_normals).pin_memory().cuda(non_blocking=True)
+            normals = normals.float().permute(0, 3, 1, 2)/255
+        else:
+            normals = None
+
+        return BatchRenderOutput(
+            rgbs=rgbs,
+            depths=depths,
+            normals=normals,
+        )

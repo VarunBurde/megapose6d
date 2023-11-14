@@ -27,7 +27,8 @@ from typing import Dict, List, Set
 from dataclasses import dataclass
 from functools import partial
 from typing import Dict, List, Optional, Set
-from ..ngp_renderer.ngp_render_api import ngp_render
+# from ..ngp_renderer.ngp_render_api import ngp_render
+from ..gaussian_renderer.gaussian_renderer_api import Gaussian_Renderer_API
 import json
 # Third Party
 import numpy as np
@@ -35,6 +36,8 @@ import panda3d as p3d
 from direct.showbase.ShowBase import ShowBase
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as R
+
+
 
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset

@@ -30,7 +30,7 @@ from omegaconf import OmegaConf
 import megapose
 import megapose.utils.tensor_collection as tc
 from megapose.config import EXP_DIR
-from megapose.datasets.datasets_cfg import make_object_dataset
+# from megapose.datasets.datasets_cfg import make_object_dataset
 from megapose.datasets.object_dataset import RigidObjectDataset
 from megapose.datasets.scene_dataset import CameraData, ObjectData
 from megapose.inference.detector import Detector
