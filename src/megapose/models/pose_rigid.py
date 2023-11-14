@@ -407,7 +407,7 @@ class PosePredictor(nn.Module):
             rgb = rgb_images[i] * 255.0
             cv2.imwrite(os.path.join(loc, str(i)  + "_rendered_image_rgb" + ".png"), rgb)
 
-        render_data_ngp = self.renderer.render(
+        render_data_ngp = self.renderer.gaussian_renderer(
             labels=labels_mv,
             TCO=TCV_O.flatten(0, 1),
             K=KV.flatten(0, 1),

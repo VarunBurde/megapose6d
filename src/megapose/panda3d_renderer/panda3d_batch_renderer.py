@@ -429,12 +429,13 @@ class Panda3dBatchRenderer:
         TCO = TCO.detach().cpu().numpy()
         Intrinsics = K.detach().cpu().numpy()
 
-        root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
+        # root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
         # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
         # world_tranformation = json.loads(open(os.path.join(root_path, "local_data", "examples", labels[0],"ngp_weight", "scale.json")).read())
         # mesh_transformation = np.array(world_tranformation['transformation'])
         # mesh_scale = world_tranformation["scale"]
-        weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "gaussian_weight", "base.ingp")
+        # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "gaussian_weight", "base.ingp")
+        weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
         mesh_scale = 1.0
         mesh_transformation = np.eye(4)
 

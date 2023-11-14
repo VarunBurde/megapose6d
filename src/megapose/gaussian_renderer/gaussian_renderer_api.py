@@ -56,16 +56,24 @@ class Gaussian_Renderer_API:
         self.resolution = resolution
         self.R = np.eye(3)
         self.T = np.array([0, 0, 0])
+        self.flip_mat = np.array([
+                                    [1, 0, 0, 0],
+                                    [0, -1, 0, 0],
+                                    [0, 0, -1, 0],
+                                    [0, 0, 0, 1]
+                                ])
 
     def set_fov(self, K):
 
-        self.fov_x = np.degrees(2 * np.arctan2(self.resolution[0], 2 * K[0, 0]))
-        self.fov_y = np.degrees(2 * np.arctan2(self.resolution[1], 2 * K[1, 1]))
-        # self.fovy = 0.8139860440345605
-        # self.fovx = 0.951948382486254
-        self.screen_center =  np.array([(K[0, 2] / self.resolution[0]), (K[1, 2] / self.resolution[1])])
+        # self.fov_x = np.degrees(2 * np.arctan2(self.resolution[0], 2 * K[0, 0]))
+        # self.fov_y = np.degrees(2 * np.arctan2(self.resolution[1], 2 * K[1, 1]))
+        self.fovy = 0.8139860440345605
+        self.fovx = 0.951948382486254
+        # self.screen_center =  np.array([(K[0, 2] / self.resolution[0]), (K[1, 2] / self.resolution[1])])
 
     def set_camera_matrix(self, Transformation, mesh_scale, mesh_transformation):
+        Transformation =  np.linalg.inv(Transformation)
+        Transformation = np.matmul(Transformation, self.flip_mat)
         self.R = Transformation[:3, :3]
         self.T = Transformation[:3, 3]
 
@@ -74,24 +82,27 @@ class Gaussian_Renderer_API:
         view = Camera(colmap_id=None, R=self.R, T=self.T, FoVx=self.fovx, FoVy=self.fovy, image=image, gt_alpha_mask=None,
                         image_name='test', uid=None, data_device="cuda")
         rendering = render(view, self.gaussians, self.pipeline, self.background)["render"]
+        rendering = rendering.detach().cpu().numpy()
+        rendering = rendering.transpose(2, 1, 0) * 255.0
         return rendering
 
 
 
-# if __name__ == '__main__':
-#     resolution = (493, 588)
-#     Transformation = np.eye(4)
-#     Transformation[2,3] = 1
-#     K = np.eye(3)
-#     K[0,0] = 1000
-#     K[1,1] = 1200
-#     K[0,2] = 300
-#     K[1,2] = 200
-#
-#     api = Gaussian_Renderer_API("/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0", resolution)
-#     api.set_fov(K)
-#     render = api.render_image(Transformation)
-#     render = render.detach().cpu().numpy()
-#     cv2.imwrite("test.png", render.transpose(1, 2, 0) * 255)
+if __name__ == '__main__':
+    resolution = (493, 588)
+    Transformation = np.eye(4)
+    Transformation[2,3] = 1
+    K = np.eye(3)
+    K[0,0] = 1000
+    K[1,1] = 1200
+    K[0,2] = 300
+    K[1,2] = 200
+
+    api = Gaussian_Renderer_API("/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0", resolution)
+    api.set_fov(K)
+    api.set_camera_matrix(Transformation, 1, 1)
+    render = api.get_image_from_tranform()
+    cv2.imwrite("test.png", render)
+    breakpoint()
 
 
