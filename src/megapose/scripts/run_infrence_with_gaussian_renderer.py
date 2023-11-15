@@ -146,7 +146,9 @@ def run_inference(
         observation, detections=detections, **model_info["inference_parameters"]
 
     )
-    print(output.infos['pose_score'])
+    # print(output.infos['pose_score'])
+    # print(extra)
+    # print(output)
 
     save_predictions(example_dir, output)
     return

@@ -69,32 +69,32 @@ class Gaussian_Renderer_API:
         self.resolution = resolution
 
     def set_fov(self, K):
-
         self.fovx = focal2fov(K[0,0], self.resolution[0])
         self.fovy = focal2fov(K[1,1], self.resolution[1])
-        self.camera_center = np.array([1 - (K[0, 2] / self.resolution[0]), 1 - (K[1, 2] / self.resolution[1])])
 
 
     def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
 
         # #############################
         # convert the scale to mm to apply the transformation
-        # Extrinsics[:3, 3] *= 1000
+        Extrinsics[:3, 3] *= 1000
 
         # apply the alignment transformation
-        # Extrinsics = np.matmul(Extrinsics, mesh_transformation)
-
-        # inital pose of renderer
-        # r = R.from_euler('zyx', [-90, 0, -90], degrees=True)
-        # Extrinsics[:3, :3] = np.matmul(Extrinsics[:3, :3], r.as_matrix())
+        Extrinsics = np.matmul(mesh_transformation, Extrinsics)
 
         # # # convert back to m scale
-        # Extrinsics[:3,3] /=1000
+        Extrinsics[:3,3] /=1000
+
+        # Extrinsics = np.linalg.inv(Extrinsics)
+        # Extrinsics = np.matmul(Extrinsics, self.flip_mat)
+        # Extrinsics = np.linalg.inv(Extrinsics)
+
+        # inital pose of renderer
+        r = R.from_euler('zyx', [-90,0,-90], degrees=True)
+        Extrinsics[:3,:3] = np.matmul(Extrinsics[:3,:3], r.as_matrix())
 
         self.R = Extrinsics[:3, :3]
         self.T = Extrinsics[:3, 3]
-
-
 
 
     def get_image_from_tranform(self):
