@@ -32,6 +32,9 @@ from megapose.utils.logging import get_logger
 # from megapose.ngp_renderer.ngp_render_api import ngp_render
 from ..gaussian_renderer.gaussian_renderer_api import Gaussian_Renderer_API
 
+weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
+gaus_renderer = Gaussian_Renderer_API(weight_path)
+
 # Local Folder
 from .panda3d_scene_renderer import Panda3dSceneRenderer
 from .types import (
@@ -44,8 +47,6 @@ from .types import (
 
 logger = get_logger(__name__)
 
-weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
-gaus_renderer = Gaussian_Renderer_API(weight_path)
 
 @dataclass
 class RenderOutput:
@@ -359,11 +360,9 @@ class Panda3dBatchRenderer:
         Intrinsics = K.detach().cpu().numpy()
 
         root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-        # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
         world_tranformation = json.loads(open(os.path.join(root_path, "local_data", "examples", labels[0],"ngp_weight", "scale.json")).read())
         mesh_transformation = np.array(world_tranformation['transformation'])
         mesh_scale = world_tranformation["scale"]
-        # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "gaussian_weight", "base.ingp")
 
 
         list_rgbs = [None for _ in np.arange(len(labels))]
@@ -371,12 +370,12 @@ class Panda3dBatchRenderer:
         list_normals = [None for _ in np.arange(len(labels))]
 
         resolution = (resolution[1], resolution[0])
+        gaus_renderer.set_resolution(resolution)
 
         for i in range(len(labels)):
             Extrinsics = TCO[i]
             K_single = Intrinsics[i]
 
-            gaus_renderer.set_resolution(resolution)
             gaus_renderer.set_fov(K_single)
             gaus_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
 

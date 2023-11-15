@@ -29,6 +29,8 @@ from functools import partial
 from typing import Dict, List, Optional, Set
 # from ..ngp_renderer.ngp_render_api import ngp_render
 from ..gaussian_renderer.gaussian_renderer_api import Gaussian_Renderer_API
+
+
 import json
 # Third Party
 import numpy as np
@@ -36,8 +38,6 @@ import panda3d as p3d
 from direct.showbase.ShowBase import ShowBase
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as R
-from ..gaussian_renderer.gaussian_renderer_api import Gaussian_Renderer_API
-
 
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset
@@ -232,10 +232,6 @@ class Panda3dSceneRenderer:
             if data_obj.remove_mesh_material:
                 obj_node.setMaterialOff(1)
             TWO = np_to_lmatrix4(data_obj.TWO.toHomogeneousMatrix())
-            # change this
-            # TWO = np.eye(4)
-            # TWO[:3,3] = data_obj.TWO.translation
-            # TWO = np_to_lmatrix4(TWO)
             obj_node.setMat(TWO)
             if data_obj.positioning_function is not None:
                 data_obj.positioning_function(root_node, obj_node)
@@ -260,6 +256,7 @@ class Panda3dSceneRenderer:
             camera_node_path.setMat(view_mat)
             if data_camera.positioning_function is not None:
                 data_camera.positioning_function(root_node, camera_node_path)
+                print(data_camera)
         return cameras
 
     def render_images(
@@ -390,16 +387,15 @@ class Panda3dSceneRenderer:
                 Extrinsics = object.TWO.toHomogeneousMatrix()
                 label = object.label
 
+                weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
+                gauss_renderer = Gaussian_Renderer_API(weight_path)
+
                 root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-                # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
                 world_tranformation = json.loads(open(
                     os.path.join(root_path, "local_data", "examples", label, "ngp_weight", "scale.json")).read())
                 mesh_transformation = np.array(world_tranformation['transformation'])
                 mesh_scale = world_tranformation["scale"]
-                # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "gaussian_weight", "base.ingp")
-                weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
 
-                gauss_renderer = Gaussian_Renderer_API(weight_path)
                 gauss_renderer.set_resolution(resolution)
                 gauss_renderer.set_fov(Intrinsics)
                 gauss_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)

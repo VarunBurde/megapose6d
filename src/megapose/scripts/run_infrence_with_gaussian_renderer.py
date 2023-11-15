@@ -160,8 +160,17 @@ def make_output_visualization(
 
     rgb, _, camera_data = load_observation(example_dir, load_depth=False)
     camera_data.TWC = Transform(np.eye(4))
-    object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
+
     object_dataset = make_object_dataset(example_dir)
+
+    # object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
+    object_datas = list()
+    TWO_eval = np.eye(4)
+    TWO_eval[:3,:3] = R.from_euler('zyx', [-90,0,90], degrees=True).as_matrix()
+    TWO_eval[2,3] = 0.3
+    Transform_test = Transform(TWO_eval)
+    object_datas.append(ObjectData(label="02_cracker_box", TWO=Transform_test))
+
     renderer = Panda3dSceneRenderer(object_dataset)
 
     camera_data, object_datas = convert_scene_observation_to_panda3d(camera_data, object_datas)
@@ -171,22 +180,6 @@ def make_output_visualization(
             color=((1.0, 1.0, 1.0, 1)),
         ),
     ]
-    # print(object_datas[0].TWO.translation)
-    # quat = object_datas[0].TWO.quaternion
-    #
-    # rot = R.from_quat([quat.x, quat.y, quat.z, quat.w]).as_euler('zyx', degrees=True)
-    #
-    #
-    # transfom = np.eye(4)
-    # transfom[:3,:3] = R.from_euler('zyx', rot, degrees=True).as_matrix()
-    # transfom[:3,3] = object_datas[0].TWO.translation
-    # transfom = np.linalg.inv(transfom)
-    #
-    # rotation = R.from_matrix(transfom[:3,:3]).as_euler('zyx', degrees=True)
-    # translation = transfom[:3,3]
-    # print(rotation)
-    # print(translation)
-
 
     renderings = renderer.render_scene(
         object_datas,
@@ -265,4 +258,4 @@ if __name__ == "__main__":
     example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
 
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-    make_output_visualization(example_dir)
+    # make_output_visualization(example_dir)

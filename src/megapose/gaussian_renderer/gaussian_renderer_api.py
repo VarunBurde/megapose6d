@@ -75,24 +75,17 @@ class Gaussian_Renderer_API:
 
     def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
 
-        # #############################
         # convert the scale to mm to apply the transformation
         Extrinsics[:3, 3] *= 1000
 
         # apply the alignment transformation
-        Extrinsics = np.matmul(mesh_transformation, Extrinsics)
+        Extrinsics = np.matmul(Extrinsics, mesh_transformation)
 
-        # # # convert back to m scale
+        # convert back to m scale
         Extrinsics[:3,3] /=1000
 
-        # Extrinsics = np.linalg.inv(Extrinsics)
-        # Extrinsics = np.matmul(Extrinsics, self.flip_mat)
-        # Extrinsics = np.linalg.inv(Extrinsics)
 
-        # inital pose of renderer
-        r = R.from_euler('zyx', [-90,0,-90], degrees=True)
-        Extrinsics[:3,:3] = np.matmul(Extrinsics[:3,:3], r.as_matrix())
-
+        Extrinsics[:3,:3] = np.transpose(Extrinsics[:3,:3])
         self.R = Extrinsics[:3, :3]
         self.T = Extrinsics[:3, 3]
 
@@ -107,21 +100,21 @@ class Gaussian_Renderer_API:
         return rendering
 
 
-if __name__ == '__main__':
-    resolution = (493, 588)
-    Transformation = np.eye(4)
-    Transformation[2,3] = 1
-    K = np.eye(3)
-    K[0,0] = 1000
-    K[1,1] = 1200
-    K[0,2] = 300
-    K[1,2] = 200
-
-    api = Gaussian_Renderer_API("/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0", resolution)
-    api.set_fov(K)
-    api.set_camera_matrix(Transformation, 1, 1)
-    render = api.get_image_from_tranform()
-    cv2.imwrite("test.png", render)
-    breakpoint()
+# if __name__ == '__main__':
+#     resolution = (493, 588)
+#     Transformation = np.eye(4)
+#     Transformation[2,3] = 1
+#     K = np.eye(3)
+#     K[0,0] = 1000
+#     K[1,1] = 1200
+#     K[0,2] = 300
+#     K[1,2] = 200
+#
+#     api = Gaussian_Renderer_API("/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0")
+#     api.set_fov(K)
+#     api.set_camera_matrix(Transformation, 1, 1)
+#     render = api.get_image_from_tranform()
+#     cv2.imwrite("test.png", render)
+#     breakpoint()
 
 
