@@ -24,7 +24,8 @@ from gaussian_spatting.scene.cameras import Camera
 import time
 import sys
 import cv2
-
+from gaussian_spatting.utils.graphics_utils import focal2fov
+from scipy.spatial.transform import Rotation as R
 
 class Gaussian_Renderer_API:
     def __init__(self, path, resolution):
@@ -62,30 +63,59 @@ class Gaussian_Renderer_API:
                                     [0, 0, -1, 0],
                                     [0, 0, 0, 1]
                                 ])
+        self.camera_center = None
 
     def set_fov(self, K):
 
-        # self.fov_x = np.degrees(2 * np.arctan2(self.resolution[0], 2 * K[0, 0]))
-        # self.fov_y = np.degrees(2 * np.arctan2(self.resolution[1], 2 * K[1, 1]))
-        self.fovy = 0.8139860440345605
-        self.fovx = 0.951948382486254
-        # self.screen_center =  np.array([(K[0, 2] / self.resolution[0]), (K[1, 2] / self.resolution[1])])
+        self.fovx = focal2fov(K[0,0], self.resolution[0])
+        self.fovy = focal2fov(K[1,1], self.resolution[1])
+        self.camera_center = np.array([1 - (K[0, 2] / self.resolution[0]), 1 - (K[1, 2] / self.resolution[1])])
 
-    def set_camera_matrix(self, Transformation, mesh_scale, mesh_transformation):
-        Transformation =  np.linalg.inv(Transformation)
-        Transformation = np.matmul(Transformation, self.flip_mat)
-        self.R = Transformation[:3, :3]
-        self.T = Transformation[:3, 3]
+
+    def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
+        # # inital pose of renderer
+
+        # Extrinsics = np.eye(4)
+        # inital pose of renderer
+        # r = R.from_euler('zyx', [0,0,180], degrees=True)
+        # Extrinsics[:3,:3] = np.matmul(Extrinsics[:3,:3], r.as_matrix())
+
+        # mesh_rot = R.from_matrix(mesh_transformation[:3,:3]).as_euler('zyx', degrees=True)
+        # print(" rot mesh")
+        # print(mesh_rot)
+        # print(mesh_transformation[:3,3])
+        #
+        # rot_exting = R.from_matrix(Extrinsics[:3,:3]).as_euler('zyx', degrees=True)
+        # print(rot_exting, " rot rxtrinsic")
+
+        # #############################
+        # convert the scale to mm to apply the transformation
+        Extrinsics[:3, 3] *= 1000
+        # #
+        # # # apply the alignment transformation
+        Extrinsics = np.matmul(Extrinsics, mesh_transformation)
+
+        # # # convert back to m scale
+        Extrinsics[:3,3] /=1000
+
+        # Extrinsics = np.linalg.inv(Extrinsics)
+        # Extrinsics = np.matmul(Extrinsics, self.flip_mat)
+        # Extrinsics = np.linalg.inv(Extrinsics)
+
+
+        self.R = Extrinsics[:3, :3]
+        self.T = Extrinsics[:3, 3]
+
+
 
     def get_image_from_tranform(self):
-        image = torch.zeros((3, self.resolution[0], self.resolution[1]), dtype=torch.float32, device="cuda")
+        image = torch.zeros((3, self.resolution[1], self.resolution[0]), dtype=torch.float32, device="cuda")
         view = Camera(colmap_id=None, R=self.R, T=self.T, FoVx=self.fovx, FoVy=self.fovy, image=image, gt_alpha_mask=None,
                         image_name='test', uid=None, data_device="cuda")
         rendering = render(view, self.gaussians, self.pipeline, self.background)["render"]
         rendering = rendering.detach().cpu().numpy()
-        rendering = rendering.transpose(2, 1, 0) * 255.0
+        rendering = rendering.transpose(1, 2, 0) * 255.0
         return rendering
-
 
 
 if __name__ == '__main__':

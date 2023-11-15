@@ -397,16 +397,18 @@ def make_output_visualization(
 
 if __name__ == "__main__":
     set_logging_level("info")
-    objects = ["01_master_chef_can", "02_cracker_box", "03_sugar_box", "04_tomatoe_soup_can", "05_mustard_bottle",
-               "06_tuna_fish_can", "07_pudding_box", "08_gelatin_box", "09_potted_meat_can", "10_banana",
-               "11_pitcher_base", "12_bleach_cleanser", "13_bowl", "14_mug", "15_drill", "16_wood_block", "17_scissors",
-               "18_large_marker", "19_larger_clamp", "20_extra_large_clamp", "21_foam_brick"]
+    # objects = ["01_master_chef_can", "02_cracker_box", "03_sugar_box", "04_tomatoe_soup_can", "05_mustard_bottle",
+    #            "06_tuna_fish_can", "07_pudding_box", "08_gelatin_box", "09_potted_meat_can", "10_banana",
+    #            "11_pitcher_base", "12_bleach_cleanser", "13_bowl", "14_mug", "15_drill", "16_wood_block", "17_scissors",
+    #            "18_large_marker", "19_larger_clamp", "20_extra_large_clamp", "21_foam_brick"]
+
+    objects = ["05_mustard_bottle"]
 
     for object in objects:
         print("running on object :", object)
         example_dir = LOCAL_DATA_DIR / "examples" / object
-        # run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
+        run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
         # create_csv(example_dir)
-        make_output_visualization(example_dir)
+        # make_output_visualization(example_dir)
 
 

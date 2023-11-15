@@ -169,6 +169,22 @@ def make_output_visualization(
             color=((1.0, 1.0, 1.0, 1)),
         ),
     ]
+    # print(object_datas[0].TWO.translation)
+    # quat = object_datas[0].TWO.quaternion
+    #
+    # rot = R.from_quat([quat.x, quat.y, quat.z, quat.w]).as_euler('zyx', degrees=True)
+    #
+    #
+    # transfom = np.eye(4)
+    # transfom[:3,:3] = R.from_euler('zyx', rot, degrees=True).as_matrix()
+    # transfom[:3,3] = object_datas[0].TWO.translation
+    # transfom = np.linalg.inv(transfom)
+    #
+    # rotation = R.from_matrix(transfom[:3,:3]).as_euler('zyx', degrees=True)
+    # translation = transfom[:3,3]
+    # print(rotation)
+    # print(translation)
+
 
     renderings = renderer.render_scene(
         object_datas,
@@ -187,25 +203,46 @@ def make_output_visualization(
     rgb_img = cv2.cvtColor(rgb_img, cv2.COLOR_RGBA2BGR)
 
     cv2.imwrite(os.path.join(example_dir , "visualizations" , "rgb.png"), rgb_img)
-    cv2.imwrite(os.path.join(example_dir , "visualizations" , "depth.png"), depth)
-    cv2.imwrite(os.path.join(example_dir , "visualizations" , "normals.png"), normals)
+    # cv2.imwrite(os.path.join(example_dir , "visualizations" , "depth.png"), depth)
+    # cv2.imwrite(os.path.join(example_dir , "visualizations" , "normals.png"), normals)
 
-    plotter = BokehPlotter()
+    rendering_gaussian = renderer.render_scene_gauss(
+        object_datas,
+        [camera_data],
+        light_datas,
+        render_depth=True,
+        render_binary_mask=False,
+        render_normals=True,
+        copy_arrays=True,
+    )[0]
 
-    fig_rgb = plotter.plot_image(rgb)
-    fig_mesh_overlay = plotter.plot_overlay(rgb, renderings.rgb)
-    contour_overlay = make_contour_overlay(
-        rgb, renderings.rgb, dilate_iterations=1, color=(0, 255, 0)
-    )["img"]
-    fig_contour_overlay = plotter.plot_image(contour_overlay)
-    fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
-    vis_dir = example_dir / "visualizations"
-    vis_dir.mkdir(exist_ok=True)
-    export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
-    export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
-    export_png(fig_all, filename=vis_dir / "all_results.png")
-    logger.info(f"Wrote visualizations to {vis_dir}.")
-    return
+    rgb_img_gauss = rendering_gaussian.rgb
+    depth_gauss = rendering_gaussian.depth * 255.0
+    normals_gauss = rendering_gaussian.normals
+
+    rgb_img_gauss = cv2.cvtColor(rgb_img_gauss, cv2.COLOR_RGBA2BGR)
+
+    cv2.imwrite(os.path.join(example_dir , "visualizations" , "rgb_gauss.png"), rgb_img_gauss)
+    # cv2.imwrite(os.path.join(example_dir , "visualizations" , "depth_gauss.png"), depth_gauss)
+    # cv2.imwrite(os.path.join(example_dir , "visualizations" , "normals_gauss.png"), normals_gauss)
+
+    #
+    # plotter = BokehPlotter()
+    #
+    # fig_rgb = plotter.plot_image(rgb)
+    # fig_mesh_overlay = plotter.plot_overlay(rgb, renderings.rgb)
+    # contour_overlay = make_contour_overlay(
+    #     rgb, renderings.rgb, dilate_iterations=1, color=(0, 255, 0)
+    # )["img"]
+    # fig_contour_overlay = plotter.plot_image(contour_overlay)
+    # fig_all = gridplot([[fig_rgb, fig_contour_overlay, fig_mesh_overlay]], toolbar_location=None)
+    # vis_dir = example_dir / "visualizations"
+    # vis_dir.mkdir(exist_ok=True)
+    # export_png(fig_mesh_overlay, filename=vis_dir / "mesh_overlay.png")
+    # export_png(fig_contour_overlay, filename=vis_dir / "contour_overlay.png")
+    # export_png(fig_all, filename=vis_dir / "all_results.png")
+    # logger.info(f"Wrote visualizations to {vis_dir}.")
+    # return
 
 
 # def make_mesh_visualization(RigidObject) -> List[Image]:
@@ -225,5 +262,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
 
-    run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
-    # make_output_visualization(example_dir)
+    # run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
+    make_output_visualization(example_dir)
