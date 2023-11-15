@@ -407,7 +407,7 @@ class PosePredictor(nn.Module):
             rgb = rgb_images[i] * 255.0
             cv2.imwrite(os.path.join(loc, str(i)  + "_rendered_image_rgb" + ".png"), rgb)
 
-        render_data_ngp = self.renderer.gaussian_renderer(
+        render_data_gauss = self.renderer.gaussian_renderer(
             labels=labels_mv,
             TCO=TCV_O.flatten(0, 1),
             K=KV.flatten(0, 1),
@@ -418,24 +418,24 @@ class PosePredictor(nn.Module):
             light_datas=light_datas,
         )
 
-        rgb_images_ngp = render_data_ngp.rgbs.cpu().numpy()
-        rgb_images_ngp = np.transpose(rgb_images_ngp, (0, 2, 3, 1))
+        rgb_images_gauss = render_data_gauss.rgbs.cpu().numpy()
+        rgb_images_gauss = np.transpose(rgb_images_gauss, (0, 2, 3, 1))
 
-        for i in range(len(rgb_images_ngp)):
-            rgb_ngp = rgb_images_ngp[i] * 255.0
-            cv2.imwrite(os.path.join(loc, str(i) + "_rendered_image_rgb_ngp" + ".png"), rgb_ngp)
+        for i in range(len(rgb_images_gauss)):
+            rgb_gauss = rgb_images_gauss[i] * 255.0
+            cv2.imwrite(os.path.join(loc, str(i) + "_rendered_image_rgb_gauss" + ".png"), rgb_gauss)
 
         renderer = "native"
 
-        if renderer == "ngp":
+        if renderer == "gauss":
             cat_list = []
-            cat_list.append(render_data_ngp.rgbs)
+            cat_list.append(render_data_gauss.rgbs)
 
             if self.render_normals:
-                cat_list.append(render_data_ngp.normals)
+                cat_list.append(render_data_gauss.normals)
 
             if self.render_depth:
-                cat_list.append(render_data_ngp.depths)
+                cat_list.append(render_data_gauss.depths)
 
             renders = torch.cat(cat_list, dim=1)
             n_channels = renders.shape[1]

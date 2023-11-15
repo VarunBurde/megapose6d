@@ -399,22 +399,22 @@ class Panda3dSceneRenderer:
                 # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "gaussian_weight", "base.ingp")
                 weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
 
-                ngp_renderer = Gaussian_Renderer_API(weight_path)
-                ngp_renderer.set_resolution(resolution)
-                ngp_renderer.set_fov(Intrinsics)
-                ngp_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
+                gauss_renderer = Gaussian_Renderer_API(weight_path)
+                gauss_renderer.set_resolution(resolution)
+                gauss_renderer.set_fov(Intrinsics)
+                gauss_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
 
-                rgb = ngp_renderer.get_image_from_tranform()
+                rgb = gauss_renderer.get_image_from_tranform()
                 rgb = np.array(rgb, dtype=np.uint8)
                 rendering = CameraRenderingData(rgb)
 
                 if render_normals:
-                    normal = ngp_renderer.get_image_from_tranform()
+                    normal = gauss_renderer.get_image_from_tranform()
                     normal = np.array(normal, dtype=np.uint8)
                     rendering.normals = normal
 
                 if render_depth:
-                    depth = ngp_renderer.get_image_from_tranform()
+                    depth = gauss_renderer.get_image_from_tranform()
                     depth = np.array(depth, dtype=np.uint8)
                     rendering.depth = depth
 
