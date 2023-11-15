@@ -31,6 +31,7 @@ from megapose.utils.logging import get_logger
 from megapose.ngp_renderer.ngp_render_api import ngp_render
 
 
+
 # Local Folder
 from .panda3d_scene_renderer import Panda3dSceneRenderer
 from .types import (
@@ -356,7 +357,8 @@ class Panda3dBatchRenderer:
         Intrinsics = K.detach().cpu().numpy()
 
         root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-        weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
+        weight_path = os.path.join(root_path, "local_data", "examples", "02_cracker_box", "ngp_weight", "base.ingp")
+        ngp_renderer = ngp_render(weight_path)
         world_tranformation = json.loads(open(os.path.join(root_path, "local_data", "examples", labels[0],"ngp_weight", "scale.json")).read())
         mesh_transformation = np.array(world_tranformation['transformation'])
         mesh_scale = world_tranformation["scale"]
@@ -366,14 +368,17 @@ class Panda3dBatchRenderer:
         list_normals = [None for _ in np.arange(len(labels))]
 
         resolution = (resolution[1], resolution[0])
-        ngp_renderer = ngp_render(weight_path, resolution)
+
+
+
+        ngp_renderer.set_resolution(resolution)
 
         for i in range(len(labels)):
             Extrinsics = TCO[i]
             K_single = Intrinsics[i]
 
             ngp_renderer.set_fov(K_single)
-            ngp_renderer.set_exposure(1.0)
+            ngp_renderer.set_exposure(2.0)
             ngp_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
 
             rgb = ngp_renderer.get_image_from_tranform("Shade")

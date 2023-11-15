@@ -146,7 +146,9 @@ def run_inference(
         observation, detections=detections, **model_info["inference_parameters"]
 
     )
-    print(output.infos['pose_score'])
+    # print(output.infos['pose_score'])
+    # print(output)
+    # print(extra)
 
     save_predictions(example_dir, output)
     return
@@ -223,7 +225,9 @@ def make_output_visualization(
 if __name__ == "__main__":
     set_logging_level("info")
     parser = argparse.ArgumentParser()
+
     example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
 
+    make_detections_visualization(example_dir)
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")
     make_output_visualization(example_dir)

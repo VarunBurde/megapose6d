@@ -8,12 +8,12 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 
 class ngp_render():
-    def __init__(self, weight_path, resolution):
+    def __init__(self, weight_path):
         self.weight_path = weight_path
         self.testbed = ngp.Testbed()
         self.testbed.load_snapshot(weight_path)
         self.screenshot_spp = 1
-        self.resolution = resolution
+        self.resolution = None
         self.flip_mat = np.array([
                                     [1, 0, 0, 0],
                                     [0, -1, 0, 0],
@@ -32,6 +32,8 @@ class ngp_render():
         elif mode == 'Shade':
             self.testbed.render_mode = ngp.RenderMode.Shade
 
+    def set_resolution(self, resolution):
+        self.resolution = resolution
 
     def set_fov(self, K):
 

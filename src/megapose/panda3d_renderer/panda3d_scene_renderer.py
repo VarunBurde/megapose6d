@@ -393,7 +393,8 @@ class Panda3dSceneRenderer:
                 mesh_transformation = np.array(world_tranformation['transformation'])
                 mesh_scale = world_tranformation["scale"]
 
-                ngp_renderer = ngp_render(weight_path, resolution)
+                ngp_renderer = ngp_render(weight_path)
+                ngp_renderer.set_resolution(resolution)
                 ngp_renderer.set_fov(Intrinsics)
                 ngp_renderer.set_exposure(0.0)
                 ngp_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
