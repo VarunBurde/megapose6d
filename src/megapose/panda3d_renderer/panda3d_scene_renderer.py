@@ -399,7 +399,8 @@ class Panda3dSceneRenderer:
                 # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "gaussian_weight", "base.ingp")
                 weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
 
-                ngp_renderer = Gaussian_Renderer_API(weight_path, resolution)
+                ngp_renderer = Gaussian_Renderer_API(weight_path)
+                ngp_renderer.set_resolution(resolution)
                 ngp_renderer.set_fov(Intrinsics)
                 ngp_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
 

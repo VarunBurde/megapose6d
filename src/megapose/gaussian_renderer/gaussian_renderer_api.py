@@ -28,7 +28,7 @@ from gaussian_spatting.utils.graphics_utils import focal2fov
 from scipy.spatial.transform import Rotation as R
 
 class Gaussian_Renderer_API:
-    def __init__(self, path, resolution):
+    def __init__(self, path):
         self.model_path = path
         parser = ArgumentParser(description="Testing script parameters")
         sys.argv = [" ", "--model_path", path]
@@ -54,7 +54,7 @@ class Gaussian_Renderer_API:
         self.scene = Scene(dataset, self.gaussians, load_iteration=args.iteration, shuffle=False)
         self.fovx = 0
         self.fovy = 0
-        self.resolution = resolution
+        self.resolution = None
         self.R = np.eye(3)
         self.T = np.array([0, 0, 0])
         self.flip_mat = np.array([
@@ -65,6 +65,9 @@ class Gaussian_Renderer_API:
                                 ])
         self.camera_center = None
 
+    def set_resolution(self, resolution):
+        self.resolution = resolution
+
     def set_fov(self, K):
 
         self.fovx = focal2fov(K[0,0], self.resolution[0])
@@ -73,38 +76,24 @@ class Gaussian_Renderer_API:
 
 
     def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
-        # # inital pose of renderer
-
-        # Extrinsics = np.eye(4)
-        # inital pose of renderer
-        # r = R.from_euler('zyx', [0,0,180], degrees=True)
-        # Extrinsics[:3,:3] = np.matmul(Extrinsics[:3,:3], r.as_matrix())
-
-        # mesh_rot = R.from_matrix(mesh_transformation[:3,:3]).as_euler('zyx', degrees=True)
-        # print(" rot mesh")
-        # print(mesh_rot)
-        # print(mesh_transformation[:3,3])
-        #
-        # rot_exting = R.from_matrix(Extrinsics[:3,:3]).as_euler('zyx', degrees=True)
-        # print(rot_exting, " rot rxtrinsic")
 
         # #############################
         # convert the scale to mm to apply the transformation
-        Extrinsics[:3, 3] *= 1000
-        # #
-        # # # apply the alignment transformation
-        Extrinsics = np.matmul(Extrinsics, mesh_transformation)
+        # Extrinsics[:3, 3] *= 1000
+
+        # apply the alignment transformation
+        # Extrinsics = np.matmul(Extrinsics, mesh_transformation)
+
+        # inital pose of renderer
+        # r = R.from_euler('zyx', [-90, 0, -90], degrees=True)
+        # Extrinsics[:3, :3] = np.matmul(Extrinsics[:3, :3], r.as_matrix())
 
         # # # convert back to m scale
-        Extrinsics[:3,3] /=1000
-
-        # Extrinsics = np.linalg.inv(Extrinsics)
-        # Extrinsics = np.matmul(Extrinsics, self.flip_mat)
-        # Extrinsics = np.linalg.inv(Extrinsics)
-
+        # Extrinsics[:3,3] /=1000
 
         self.R = Extrinsics[:3, :3]
         self.T = Extrinsics[:3, 3]
+
 
 
 

@@ -44,6 +44,8 @@ from .types import (
 
 logger = get_logger(__name__)
 
+weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
+gaus_renderer = Gaussian_Renderer_API(weight_path)
 
 @dataclass
 class RenderOutput:
@@ -194,7 +196,6 @@ class Panda3dBatchRenderer:
 
         TCO = TCO.detach()
         TOC = invert_transform_matrices(TCO).cpu().numpy().astype(np.float32)
-
         K = K.cpu().numpy()
         TWO = Transform((0.0, 0.0, 0.0, 1.0), (0.0, 0.0, 0.0))
         scene_datas = []
@@ -436,7 +437,6 @@ class Panda3dBatchRenderer:
         mesh_transformation = np.array(world_tranformation['transformation'])
         mesh_scale = world_tranformation["scale"]
         # weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "gaussian_weight", "base.ingp")
-        weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
 
 
         list_rgbs = [None for _ in np.arange(len(labels))]
@@ -445,13 +445,14 @@ class Panda3dBatchRenderer:
 
         resolution = (resolution[1], resolution[0])
         now = time.time()
-        gaus_renderer = Gaussian_Renderer_API(weight_path, resolution)
+
         print("ngp_render init time: ", time.time() - now)
 
         for i in range(len(labels)):
             Extrinsics = TCO[i]
             K_single = Intrinsics[i]
 
+            gaus_renderer.set_resolution(resolution)
             gaus_renderer.set_fov(K_single)
             gaus_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
 
