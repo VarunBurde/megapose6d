@@ -425,7 +425,7 @@ class PosePredictor(nn.Module):
             rgb_gauss = rgb_images_gauss[i] * 255.0
             cv2.imwrite(os.path.join(loc, str(i) + "_rendered_image_rgb_gauss" + ".png"), rgb_gauss)
 
-        renderer = "native"
+        renderer = "gauss"
 
         if renderer == "gauss":
             cat_list = []

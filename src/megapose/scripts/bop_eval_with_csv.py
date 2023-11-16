@@ -220,6 +220,7 @@ def run_inference(
 
             with open(json_file_name, "w") as outfile:
                 json.dump(data_ycb, outfile, indent=4)
+            break
 
 
 def make_output_visualization(

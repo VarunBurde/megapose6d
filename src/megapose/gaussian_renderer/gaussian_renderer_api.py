@@ -21,10 +21,11 @@ from argparse import ArgumentParser
 from gaussian_spatting.arguments import ModelParams, PipelineParams, get_combined_args, ParamGroup
 from gaussian_spatting.gaussian_renderer import GaussianModel
 from gaussian_spatting.scene.cameras import Camera
+import math
 import time
 import sys
 import cv2
-from gaussian_spatting.utils.graphics_utils import focal2fov
+from gaussian_spatting.utils.graphics_utils import focal2fov, fov2focal
 from scipy.spatial.transform import Rotation as R
 
 class Gaussian_Renderer_API:
@@ -69,9 +70,21 @@ class Gaussian_Renderer_API:
         self.resolution = resolution
 
     def set_fov(self, K):
-        self.fovx = focal2fov(K[0,0], self.resolution[0])
-        self.fovy = focal2fov(K[1,1], self.resolution[1])
+        # ngp formuala
+        # camera_angle_x = math.atan(self.resolution[0] / (K[0,0] * 2)) * 2
+        # camera_angle_y = math.atan(self.resolution[1] / (K[1,1] * 2)) * 2
+        # camera_fovx = camera_angle_x * 180 / math.pi
+        # camera_fovy = camera_angle_y * 180 / math.pi
+        #
+        # self.fovx = camera_fovx
+        # self.fovy = camera_fovy
 
+        self.fovx = focal2fov(K[0,0], 2 * K[0,2])
+        # self.fovy = focal2fov(fov2focal( self.fovx , self.resolution[0]), self.resolution[1])
+        self.fovy = focal2fov(K[1,1], 2 * K[1,2])
+
+        # self.fovy = focal2fov(K[1,1], self.resolution[1])
+        # self.fovx = focal2fov(fov2focal( self.fovy , self.resolution[1]), self.resolution[0])
 
     def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
 
@@ -84,16 +97,15 @@ class Gaussian_Renderer_API:
         # convert back to m scale
         Extrinsics[:3,3] /=1000
 
-
-        Extrinsics[:3,:3] = np.transpose(Extrinsics[:3,:3])
-        self.R = Extrinsics[:3, :3]
+        self.R = np.transpose(Extrinsics[:3,:3])
         self.T = Extrinsics[:3, 3]
 
 
     def get_image_from_tranform(self):
         image = torch.zeros((3, self.resolution[1], self.resolution[0]), dtype=torch.float32, device="cuda")
-        view = Camera(colmap_id=None, R=self.R, T=self.T, FoVx=self.fovx, FoVy=self.fovy, image=image, gt_alpha_mask=None,
-                        image_name='test', uid=None, data_device="cuda")
+        view = Camera( R=self.R, T=self.T, FoVx=self.fovx, FoVy=self.fovy, image=image, gt_alpha_mask=None,
+                       image_name="test", uid=0, colmap_id=None)
+
         rendering = render(view, self.gaussians, self.pipeline, self.background)["render"]
         rendering = rendering.detach().cpu().numpy()
         rendering = rendering.transpose(1, 2, 0) * 255.0
