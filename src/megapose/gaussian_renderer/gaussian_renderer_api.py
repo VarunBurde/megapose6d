@@ -79,12 +79,21 @@ class Gaussian_Renderer_API:
         # self.fovx = camera_fovx
         # self.fovy = camera_fovy
 
-        self.fovx = focal2fov(K[0,0], 2 * K[0,2])
+        # # best combination
+        self.fovx = focal2fov(K[0,0], self.resolution[0])
+        self.fovy = focal2fov(fov2focal( self.fovx , self.resolution[0]), self.resolution[1])
+
+
+        # self.fovx = focal2fov(K[0,0], 2 * K[1,2])
         # self.fovy = focal2fov(fov2focal( self.fovx , self.resolution[0]), self.resolution[1])
-        self.fovy = focal2fov(K[1,1], 2 * K[1,2])
+
+
+
+        # self.fovy = focal2fov(K[1,1], 2 * K[1,2])
 
         # self.fovy = focal2fov(K[1,1], self.resolution[1])
         # self.fovx = focal2fov(fov2focal( self.fovy , self.resolution[1]), self.resolution[0])
+        # self.camera_center = np.array([1 - (K[0,2]/self.resolution[0]), 1 - (K[1,2] /self.resolution[1])])
 
     def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
 
