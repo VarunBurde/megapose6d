@@ -124,13 +124,13 @@ class Gaussian_Renderer_API:
     def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
 
         # convert the scale to mm to apply the transformation
-        # Extrinsics[:3, 3] *= 1000
+        Extrinsics[:3, 3] *= 1000
 
         # apply the alignment transformation
-        # Extrinsics = np.matmul(Extrinsics, mesh_transformation)
+        Extrinsics = np.matmul(Extrinsics, mesh_transformation)
 
         # convert back to m scale
-        # Extrinsics[:3,3] /=1000
+        Extrinsics[:3,3] /=1000
 
 
         # x_trans = Extrinsics[0,3]
