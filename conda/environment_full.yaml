@@ -5,14 +5,17 @@ channels:
    - anaconda
    - defaults
 dependencies:
+  - pip
+  - wget
   - python-wget
   - joblib
   - ipython
   - ipykernel
   - jupyterlab
-  - notebook==6.4.12
+  - notebook==6.5.4
   - nb_conda_kernels
   - jupyter_contrib_nbextensions
+  - pinocchio
   - rclone
   - pillow
   - ipywidgets

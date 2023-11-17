@@ -20,7 +20,7 @@ from gaussian_spatting.utils.general_utils import safe_state
 from argparse import ArgumentParser
 from gaussian_spatting.arguments import ModelParams, PipelineParams, get_combined_args, ParamGroup
 from gaussian_spatting.gaussian_renderer import GaussianModel
-from gaussian_spatting.scene.cameras import Camera
+from gaussian_spatting.scene.cameras import MiniCam,Camera
 import math
 import time
 import sys
@@ -56,66 +56,113 @@ class Gaussian_Renderer_API:
         self.fovx = 0
         self.fovy = 0
         self.resolution = None
-        self.R = np.eye(3)
-        self.T = np.array([0, 0, 0])
-        self.flip_mat = np.array([
-                                    [1, 0, 0, 0],
-                                    [0, -1, 0, 0],
-                                    [0, 0, -1, 0],
-                                    [0, 0, 0, 1]
-                                ])
-        self.camera_center = None
+        self.view = None
+        self.znear = 0.1
+        self.zfar = 1000
+        self.scale = 1.0
+        self.center = None
+
 
     def set_resolution(self, resolution):
         self.resolution = resolution
 
     def set_fov(self, K):
-        # ngp formuala
-        # camera_angle_x = math.atan(self.resolution[0] / (K[0,0] * 2)) * 2
-        # camera_angle_y = math.atan(self.resolution[1] / (K[1,1] * 2)) * 2
-        # camera_fovx = camera_angle_x * 180 / math.pi
-        # camera_fovy = camera_angle_y * 180 / math.pi
-        #
-        # self.fovx = camera_fovx
-        # self.fovy = camera_fovy
-
-        # # best combination
-        self.fovx = focal2fov(K[0,0], self.resolution[0])
-        self.fovy = focal2fov(fov2focal( self.fovx , self.resolution[0]), self.resolution[1])
-
-
-        # self.fovx = focal2fov(K[0,0], 2 * K[1,2])
-        # self.fovy = focal2fov(fov2focal( self.fovx , self.resolution[0]), self.resolution[1])
-
-
-
-        # self.fovy = focal2fov(K[1,1], 2 * K[1,2])
-
         # self.fovy = focal2fov(K[1,1], self.resolution[1])
-        # self.fovx = focal2fov(fov2focal( self.fovy , self.resolution[1]), self.resolution[0])
-        # self.camera_center = np.array([1 - (K[0,2]/self.resolution[0]), 1 - (K[1,2] /self.resolution[1])])
+        # self.fovx = focal2fov(K[0,0], self.resolution[0])
+        self.fovx = 2 * np.arctan2(self.resolution[0], 2 * K[0, 0])
+        self.fovy = 2 * np.arctan2(self.resolution[1], 2 * K[1, 1])
+        self.center = np.array([(K[0, 2] / self.resolution[0]),(K[1, 2] / self.resolution[1])])
+        # print("center", self.center)
+        # print("width: " + str(self.resolution[0]), "height: " + str(self.resolution[1]))
+        # print("Fovx: " + str(self.fovx), "Fovy: " + str(self.fovy))        # self.fovy = focal2fov(K[1,1], self.resolution[1])
+        # self.fovx = focal2fov(K[0,0], self.resolution[0])
+
+    def getWorld2View2(self,R, t, translate=np.array([.0, .0, .0]), scale=1.0):
+        Rt = np.zeros((4, 4))
+        Rt[:3, :3] = R.transpose()
+        Rt[:3, 3] = t
+        Rt[3, 3] = 1.0
+
+        C2W = np.linalg.inv(Rt)
+        cam_center = C2W[:3, 3]
+        cam_center = (cam_center + translate) * scale
+        C2W[:3, 3] = cam_center
+        Rt = np.linalg.inv(C2W)
+        return np.float32(Rt)
+
+    def getProjectionMatrix(self, znear, zfar, fovX, fovY):
+
+        tanHalfFovY = math.tan(((fovY) / 2))
+        tanHalfFovX = math.tan(((fovX) / 2))
+
+        # print(f"fovX: {fovX}, fovY: {fovY}")
+        # print("tan fov y",  tanHalfFovY, tanHalfFovX , "tan fov x")
+
+
+        top = tanHalfFovY * znear
+        bottom = -top
+        right = tanHalfFovX * znear
+        left = -right
+
+        # print("top", top, "bottom", bottom, "right", right, "left", left)
+        P = torch.zeros(4, 4)
+
+        z_sign = 1.0
+
+        P[0, 0] = 2.0 * znear / (right - left) # smthg/2*right
+        P[1, 1] = 2.0 * znear / (top - bottom)
+        # P[0, 2] = (right + left) / (right - left)
+        # P[1, 2] = (top + bottom) / (top - bottom)
+        P[0, 2] = self.center[0] * 2 - 1
+        P[1, 2] = self.center[1] * 2 - 1
+        P[3, 2] = z_sign
+        P[2, 2] = z_sign * zfar / (zfar - znear)
+        P[2, 3] = -(zfar * znear) / (zfar - znear)
+        # print(P)
+        return P
 
     def set_camera_matrix(self, Extrinsics, mesh_scale, mesh_transformation):
 
         # convert the scale to mm to apply the transformation
-        Extrinsics[:3, 3] *= 1000
+        # Extrinsics[:3, 3] *= 1000
 
         # apply the alignment transformation
-        Extrinsics = np.matmul(Extrinsics, mesh_transformation)
+        # Extrinsics = np.matmul(Extrinsics, mesh_transformation)
 
         # convert back to m scale
-        Extrinsics[:3,3] /=1000
+        # Extrinsics[:3,3] /=1000
 
-        self.R = np.transpose(Extrinsics[:3,:3])
-        self.T = Extrinsics[:3, 3]
+
+        # x_trans = Extrinsics[0,3]
+        # y_trans = Extrinsics[1,3]
+        # Extrinsics[0,3] = y_trans
+        # Extrinsics[1,3] = x_trans
+
+        # r = R.from_euler('zyx', [0,0,-90], degrees=True)
+        # Extrinsics[:3,:3] = np.matmul(Extrinsics[:3,:3], r.as_matrix())
+
+        # print(R.from_matrix(Extrinsics[:3,:3]).as_euler('zyx', degrees=True))
+        # print(Extrinsics[:3,3])
+
+        Rot = np.transpose(Extrinsics[:3,:3])
+        Tra = Extrinsics[:3, 3]
+
+        world_view = torch.tensor(self.getWorld2View2(Rot, Tra, scale=self.scale)).transpose(0, 1).cuda()
+
+        projection_matrix = torch.tensor(self.getProjectionMatrix(znear=self.znear, zfar=self.zfar, fovX=self.fovx, fovY=self.fovy)).transpose(0,1).cuda()
+        full_projection = (world_view.unsqueeze(0).bmm(projection_matrix.unsqueeze(0))).squeeze(0)
+
+        self.view = MiniCam( width=self.resolution[0], height=self.resolution[1], fovy=self.fovy, fovx=self.fovx,
+                             znear=self.znear, zfar=self.zfar, world_view_transform=world_view, full_proj_transform=full_projection)
+
+        # image = torch.zeros((1, self.resolution[1], self.resolution[0]), dtype=torch.float32, device="cuda")
+        # self.view = Camera(colmap_id=0, R=Rot, T=Tra, FoVx=self.fovx, FoVy=self.fovy, image=image, gt_alpha_mask=None,
+        #                    image_name="test",uid=0)
 
 
     def get_image_from_tranform(self):
-        image = torch.zeros((3, self.resolution[1], self.resolution[0]), dtype=torch.float32, device="cuda")
-        view = Camera( R=self.R, T=self.T, FoVx=self.fovx, FoVy=self.fovy, image=image, gt_alpha_mask=None,
-                       image_name="test", uid=0, colmap_id=None)
-
-        rendering = render(view, self.gaussians, self.pipeline, self.background)["render"]
+        # print(self.view.image_width, self.view.image_height)
+        rendering = render(self.view, self.gaussians, self.pipeline, self.background)["render"]
         rendering = rendering.detach().cpu().numpy()
         rendering = rendering.transpose(1, 2, 0) * 255.0
         return rendering

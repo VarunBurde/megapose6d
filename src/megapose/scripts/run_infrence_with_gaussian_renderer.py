@@ -166,8 +166,11 @@ def make_output_visualization(
     # object_datas = load_object_data(example_dir / "outputs" / "object_data.json")
     object_datas = list()
     TWO_eval = np.eye(4)
-    TWO_eval[:3,:3] = R.from_euler('zyx', [-90,0,90], degrees=True).as_matrix()
-    TWO_eval[2,3] = 0.3
+    TWO_eval[:3,:3] = R.from_euler('zyx', [-90,90,45], degrees=True).as_matrix()
+    TWO_eval[:3, :3] = R.from_euler('zyx', [45, 45, 0], degrees=True).as_matrix()
+    TWO_eval[0,3] = 0
+    TWO_eval[1,3] = 0
+    TWO_eval[2,3] = 1
     Transform_test = Transform(TWO_eval)
     object_datas.append(ObjectData(label="02_cracker_box", TWO=Transform_test))
 

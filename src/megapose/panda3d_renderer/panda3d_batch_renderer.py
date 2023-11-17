@@ -35,6 +35,7 @@ from ..gaussian_renderer.gaussian_renderer_api import Gaussian_Renderer_API
 weight_path = "/home/testbed/PycharmProjects/gaussian-splatting/output/d3b2f74a-0"
 gaus_renderer = Gaussian_Renderer_API(weight_path)
 
+
 # Local Folder
 from .panda3d_scene_renderer import Panda3dSceneRenderer
 from .types import (
@@ -373,6 +374,7 @@ class Panda3dBatchRenderer:
         gaus_renderer.set_resolution(resolution)
 
         for i in range(len(labels)):
+            # print(f"Rendering {i}th object")
             Extrinsics = TCO[i]
             K_single = Intrinsics[i]
 

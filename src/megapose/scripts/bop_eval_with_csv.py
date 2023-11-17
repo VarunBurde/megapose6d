@@ -127,7 +127,7 @@ def save_predictions(
     return
 
 def create_csv(example_dir):
-    path = example_dir / "ngp_results.csv"
+    path = example_dir / "gauss_results.csv"
     json_files_path = example_dir / "ycb_output"
 
     if not os.path.exists(json_files_path):
@@ -220,7 +220,9 @@ def run_inference(
 
             with open(json_file_name, "w") as outfile:
                 json.dump(data_ycb, outfile, indent=4)
+
             break
+
 
 
 def make_output_visualization(
@@ -278,7 +280,7 @@ def make_output_visualization(
             vis_dir.mkdir(exist_ok=True)
 
             loc_scene = scene_id + "_" + img_id
-            result_name = loc_scene + "_NGP" + ".png"
+            result_name = loc_scene + "_gauss" + ".png"
             img_path_exist_check = os.path.join(vis_dir, result_name)
 
             if os.path.exists(img_path_exist_check):
@@ -294,7 +296,7 @@ def make_output_visualization(
                 ),
             ]
 
-            renderings = renderer.render_scene_ngp(
+            renderings = renderer.render_scene_gauss(
                 object_datas,
                 [camera_data],
                 light_datas,
