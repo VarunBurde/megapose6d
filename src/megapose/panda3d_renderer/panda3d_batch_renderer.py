@@ -29,7 +29,7 @@ from megapose.lib3d.transform import Transform
 from megapose.lib3d.transform_ops import invert_transform_matrices
 from megapose.utils.logging import get_logger
 from megapose.ngp_renderer.ngp_render_api import ngp_render
-
+from megapose.config import LOCAL_DATA_DIR
 
 
 # Local Folder
@@ -356,10 +356,9 @@ class Panda3dBatchRenderer:
         TCO = TCO.detach().cpu().numpy()
         Intrinsics = K.detach().cpu().numpy()
 
-        root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-        weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
+        weight_path = os.path.join(LOCAL_DATA_DIR, "examples", labels[0], "ngp_weight", "base.ingp")
         ngp_renderer = ngp_render(weight_path)
-        world_tranformation = json.loads(open(os.path.join(root_path, "local_data", "examples", labels[0],"ngp_weight", "scale.json")).read())
+        world_tranformation = json.loads(open(os.path.join(LOCAL_DATA_DIR, "examples", labels[0],"ngp_weight", "scale.json")).read())
         mesh_transformation = np.array(world_tranformation['transformation'])
         mesh_scale = world_tranformation["scale"]
 

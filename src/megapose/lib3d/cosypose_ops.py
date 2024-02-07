@@ -18,6 +18,12 @@ limitations under the License.
 
 # Third Party
 import torch
+import os
+from ..ngp_renderer.ngp_render_api import ngp_render
+from megapose.config import LOCAL_DATA_DIR
+import numpy as np
+import json
+import cv2
 
 # Local Folder
 from .rotations import (
@@ -197,6 +203,7 @@ def TCO_init_from_boxes_autodepth_with_R(boxes_2d, model_points_3d, K, R):
 
     C_pts_3d = transform_pts(TCO, model_points_3d)
 
+
     if bsz > 0:
         deltax_3d = C_pts_3d[:, :, 0].max(dim=1).values - C_pts_3d[:, :, 0].min(dim=1).values
         deltay_3d = C_pts_3d[:, :, 1].max(dim=1).values - C_pts_3d[:, :, 1].min(dim=1).values
@@ -204,15 +211,26 @@ def TCO_init_from_boxes_autodepth_with_R(boxes_2d, model_points_3d, K, R):
         deltax_3d = C_pts_3d[:, 0, 0]
         deltay_3d = C_pts_3d[:, 0, 1]
 
+
     bb_deltax = (boxes_2d[:, 2] - boxes_2d[:, 0]) + 1
     bb_deltay = (boxes_2d[:, 3] - boxes_2d[:, 1]) + 1
+
+    print("bbox", boxes_2d[0])
+    print("bb_xy_centers", bb_xy_centers[0])
+    print("bb_deltax", bb_deltax[0])
+    print("bb_deltay", bb_deltay[0])
+    print("deltax_3d", deltax_3d[0])
+    print("deltay_3d", deltay_3d[0])
 
     z_from_dx = fxfy[:, 0] * deltax_3d / bb_deltax
     z_from_dy = fxfy[:, 1] * deltay_3d / bb_deltay
 
     z = (z_from_dy.unsqueeze(1) + z_from_dx.unsqueeze(1)) / 2
-
     xy_init = ((bb_xy_centers - cxcy) * z) / fxfy
+
+    # print("z", z)
+    # print("xy_init", xy_init)
+
     TCO[:, :2, 3] = xy_init
     TCO[:, 2, 3] = z.flatten()
     return TCO
@@ -256,6 +274,130 @@ def TCO_init_from_boxes_zup_autodepth(boxes_2d, model_points_3d, K):
     xy_init = ((bb_xy_centers - cxcy) * z) / fxfy
     TCO[:, :2, 3] = xy_init
     TCO[:, 2, 3] = z.flatten()
+    return TCO
+
+
+def TCO_init_from_boxes_and_nerf(boxes_2d, K, label, image, R):
+
+    z_guess = 1.0
+    fxfy = K[:, [0, 1], [0, 1]]
+    cxcy = K[:, [0, 1], [2, 2]]
+    Extrinsics = np.eye(4)
+    Extrinsics[2, 3] = z_guess
+    resolution = [image.shape[3], image.shape[2]]
+
+    ngp_data_path = os.path.join(LOCAL_DATA_DIR, "examples", label[0], "ngp_weight")
+
+    weight_path = os.path.join(ngp_data_path, "base.ingp")
+    world_tranformation = json.loads(open(
+        os.path.join(ngp_data_path, "scale.json")).read())
+    mesh_transformation = np.array(world_tranformation['transformation'])
+    mesh_scale = world_tranformation["scale"]
+
+    ngp_renderer = ngp_render(weight_path)
+    ngp_renderer.set_resolution(resolution)
+    ngp_renderer.set_exposure(0.0)
+
+    rgb_images = []
+
+    # list of poses of camera to render depth images from each face of cube
+    cube_poses = []
+    # cube_poses.append(np.array([[0, 0, 1, 0], [0, 1, 0, 0], [-1, 0, 0, z_guess], [0, 0, 0, 1]]))
+    # cube_poses.append(np.array([[0, 0, -1, 0], [0, 1, 0, 0], [1, 0, 0, z_guess], [0, 0, 0, 1]]))
+    cube_poses.append(np.array([[1, 0, 0, 0], [0, 0, -1, 0], [0, 1, 0, z_guess], [0, 0, 0, 1]]))
+    cube_poses.append(np.array([[-1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, z_guess], [0, 0, 0, 1]]))
+    cube_poses.append(np.array([[0, 1, 0, 0], [0, 0, 1, 0], [1, 0, 0, z_guess], [0, 0, 0, 1]]))
+    cube_poses.append(np.array([[0, -1, 0, 0], [0, 0, -1, 0], [1, 0, 0, z_guess], [0, 0, 0, 1]]))
+
+
+    # remder depth images from each face of cube
+    for i in range(cube_poses.__len__()):
+        ngp_renderer.set_camera_matrix(cube_poses[i], mesh_scale, mesh_transformation)
+        rgb_image = ngp_renderer.get_image_from_tranform("Shade")
+        rgb_images.append(rgb_image)
+        # cv2.imwrite(os.path.join(ngp_data_path, "TCO", "image" + str(i) + ".png"), rgb_image)
+
+
+    # find the max bbox from the rendered images
+    corners = []
+    for i in range(rgb_images.__len__()):
+        depth_image = cv2.GaussianBlur(rgb_images[i], (5, 5), 0)
+        depth_image = cv2.cvtColor(depth_image, cv2.COLOR_BGR2GRAY)
+        mask = np.zeros_like(depth_image, dtype=np.uint8)
+        mask[depth_image > 0] = 255
+        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        x, y, w, h = cv2.boundingRect(contours[0])
+        corners.append([x, y, (x + w), (y + h)])
+
+    x = min([i[0] for i in corners])
+    y = min([i[1] for i in corners])
+    w = max([i[2] for i in corners])
+    h = max([i[3] for i in corners])
+
+    intrinsics = np.eye(4)
+    intrinsics[0, 0] = K[0][0][0]
+    intrinsics[1, 1] = K[0][1][1]
+    intrinsics[0, 2] = K[0][0][2]
+    intrinsics[1, 2] = K[0][1][2]
+
+    # 4 points with pixel coordinates
+    points = np.array([[x, y], [w, y], [w, h], [x, h]])
+    points = np.concatenate([points, np.ones((4, 2))], axis=1)
+
+    # project the 2d bbox to 3d
+    Projection_matrix = intrinsics @ Extrinsics
+
+    # 3d points
+    points_3d = np.linalg.inv(Projection_matrix) @ points.T
+
+    points_3d = points_3d.T
+
+    min_x = min(points_3d[:, 0])
+    max_x = max(points_3d[:, 0])
+    min_y = min(points_3d[:, 1])
+    max_y = max(points_3d[:, 1])
+
+    deltax_3d = max_x - min_x
+    deltay_3d = max_y - min_y
+
+    bsz = boxes_2d.shape[0]
+    TCO = (
+        torch.tensor([[0, 1, 0, 0], [0, 0, -1, 0], [-1, 0, 0, z_guess], [0, 0, 0, 1]])
+        .to(torch.float)
+        .to(boxes_2d.device)
+        .repeat(bsz, 1, 1)
+    )
+    TCO[:, :3, :3] = R
+
+    bb_xy_centers = (boxes_2d[:, [0, 1]] + boxes_2d[:, [2, 3]]) / 2
+    xy_init = ((bb_xy_centers - cxcy) * z_guess) / fxfy
+    TCO[:, :2, 3] = xy_init
+
+    bb_deltax = (boxes_2d[:, 2] - boxes_2d[:, 0]) + 1
+    bb_deltay = (boxes_2d[:, 3] - boxes_2d[:, 1]) + 1
+
+    # deltax_3d = w
+    # deltay_3d = h
+
+    print("bbox_nerf", boxes_2d[0])
+    print("bb_xy_centers_nerf", bb_xy_centers[0])
+    print("bb_deltax_nerf", bb_deltax[0])
+    print("bb_deltay_nerf", bb_deltay[0])
+    print("deltax_3d_nerf", deltax_3d)
+    print("deltay_3d_nerf", deltay_3d)
+
+    z_from_dx = fxfy[:, 0] * deltax_3d / bb_deltax
+    z_from_dy = fxfy[:, 1] * deltay_3d / bb_deltay
+
+    z = (z_from_dy.unsqueeze(1) + z_from_dx.unsqueeze(1)) / 2
+
+    # print("z_nerf", z)
+
+    xy_init = ((bb_xy_centers - cxcy) * z) / fxfy
+    # print("xy_init_nerf", xy_init)
+    TCO[:, :2, 3] = xy_init
+    TCO[:, 2, 3] = z.flatten()
+
     return TCO
 
 

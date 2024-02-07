@@ -20,6 +20,7 @@ import time
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from megapose.config import LOCAL_DATA_DIR
 
 import cv2
 import os
@@ -383,8 +384,7 @@ class PosePredictor(nn.Module):
 
         render_mask = False
 
-        root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-        loc = os.path.join(root_path, "local_data", "examples", labels[0], "rendered_data")
+        loc = os.path.join(LOCAL_DATA_DIR, "examples", labels[0], "rendered_data")
         if not os.path.exists(loc):
             os.mkdir(loc)
 

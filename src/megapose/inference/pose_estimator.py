@@ -39,7 +39,7 @@ from megapose.inference.types import (
     ObservationTensor,
     PoseEstimatesType,
 )
-from megapose.lib3d.cosypose_ops import TCO_init_from_boxes_autodepth_with_R
+from megapose.lib3d.cosypose_ops import TCO_init_from_boxes_autodepth_with_R, TCO_init_from_boxes_and_nerf
 from megapose.training.utils import CudaTimer, SimpleTimer
 from megapose.utils import transform_utils
 from megapose.utils.logging import get_logger
@@ -399,14 +399,34 @@ class PoseEstimator(torch.nn.Module):
             # [b,3,3]
             SO3_grid_ = SO3_grid[m_idx]
 
-            # Compute the initial poses
-            # [b,4,4]
-            TCO_init_ = TCO_init_from_boxes_autodepth_with_R(
+            # Compute the initial poses  [b,4,4]
+
+            # TCO_init_ = TCO_init_from_boxes_autodepth_with_R(
+            #     bboxes_,
+            #     points_,
+            #     K_,
+            #     SO3_grid_
+            # )
+            # print(TCO_init_[0])
+
+            TCO_init_ = TCO_init_from_boxes_and_nerf(
                 bboxes_,
-                points_,
                 K_,
-                SO3_grid_,
+                labels_,
+                images_,
+                SO3_grid_
             )
+
+
+
+            # break
+            # print(TCO_init_[0])
+            # print("SO3_grid_", SO3_grid_)
+            # print("SO3_grid_ shape", SO3_grid_.shape)
+            # print("idx", m_idx)
+            # print("TCO_init_", TCO_init_)
+            # print("TCO_init_ shape", TCO_init_.shape)
+            # break
 
             del points_
 

@@ -69,6 +69,11 @@ class ngp_render():
         image = np.array(image) * 255.0
         return image
 
+    def get_image_raw(self, mode):
+        self.set_renderer_mode(mode)
+        image = self.testbed.render(self.resolution[0], self.resolution[1], self.screenshot_spp, True)
+        return image
+
     def set_camera_matrix(self, Extrinsics, nerf_scale, mesh_transformation):
 
         #############################
