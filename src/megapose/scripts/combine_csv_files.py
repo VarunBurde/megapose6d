@@ -5,6 +5,8 @@ from tqdm import tqdm
 
 def combine_csv(csv_files, outpath):
     header_saved = False
+    total_time = 0
+    time_counter = 0
     row_list = ["scene_id",	"im_id",	"obj_id",	"score",	"R",	"t",	"time"]
     with open(outpath, 'w', newline='') as fout:
         writer = csv.writer(fout)
@@ -20,7 +22,12 @@ def combine_csv(csv_files, outpath):
                     scene_id, img_id, obj_id, score, Rtx, Tv, time = row
                     Rtx = Rtx.replace(","," ")
                     Tv = Tv.replace(","," ")
+                    time_counter += 1
+                    time = float(time)
+                    total_time += time
                     writer.writerow({"scene_id": scene_id,"im_id": img_id,"obj_id": obj_id,"score":score,"R":Rtx,"t":Tv,"time": str(-1)})
+
+    print(" average time ", total_time/time_counter)
 
 
 if __name__ == '__main__':

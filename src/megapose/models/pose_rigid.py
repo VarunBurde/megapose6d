@@ -405,6 +405,7 @@ class PosePredictor(nn.Module):
         # save all the images using opencv
         for i in range(len(rgb_images)):
             rgb = rgb_images[i] * 255.0
+            rgb = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(loc, str(i)  + "_rendered_image_rgb" + ".png"), rgb)
 
         render_data_ngp = self.renderer.ngp_renderer(
@@ -423,6 +424,7 @@ class PosePredictor(nn.Module):
 
         for i in range(len(rgb_images_ngp)):
             rgb_ngp = rgb_images_ngp[i] * 255.0
+            rgb_ngp = cv2.cvtColor(rgb_ngp, cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(loc, str(i) + "_rendered_image_rgb_ngp" + ".png"), rgb_ngp)
 
         renderer = "ngp"

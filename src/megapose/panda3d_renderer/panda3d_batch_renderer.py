@@ -357,7 +357,7 @@ class Panda3dBatchRenderer:
         Intrinsics = K.detach().cpu().numpy()
 
         root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-        weight_path = os.path.join(root_path, "local_data", "examples", "02_cracker_box", "ngp_weight", "base.ingp")
+        weight_path = os.path.join(root_path, "local_data", "examples", labels[0], "ngp_weight", "base.ingp")
         ngp_renderer = ngp_render(weight_path)
         world_tranformation = json.loads(open(os.path.join(root_path, "local_data", "examples", labels[0],"ngp_weight", "scale.json")).read())
         mesh_transformation = np.array(world_tranformation['transformation'])
@@ -378,7 +378,7 @@ class Panda3dBatchRenderer:
             K_single = Intrinsics[i]
 
             ngp_renderer.set_fov(K_single)
-            ngp_renderer.set_exposure(2.0)
+            ngp_renderer.set_exposure(0.0)
             ngp_renderer.set_camera_matrix(Extrinsics, mesh_scale, mesh_transformation)
 
             rgb = ngp_renderer.get_image_from_tranform("Shade")
