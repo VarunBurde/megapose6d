@@ -5,7 +5,6 @@ channels:
    - anaconda
    - defaults
 dependencies:
-  - python=3.9
   - pip
   - wget
   - python-wget
@@ -16,7 +15,7 @@ dependencies:
   - ipython
   - ipykernel
   - jupyterlab
-  - notebook
+  - notebook==6.4.12
   - nb_conda_kernels
   - jupyter_contrib_nbextensions
   - pinocchio
@@ -57,7 +56,6 @@ dependencies:
       - kornia 
       - pyarrow 
       - dt_apriltags 
-      - open3d
       - structlog
       - imageio
       - progressbar
