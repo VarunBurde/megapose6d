@@ -13,8 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-
-
+import os.path
 
 # Third Party
 import torch
@@ -22,6 +21,7 @@ import torchvision
 
 # MegaPose
 from megapose.datasets.pose_dataset import PoseDataset
+from megapose.config import LOCAL_DATA_DIR
 
 # Local Folder
 from .camera_geometry import boxes_from_uv, project_points, project_points_robust
@@ -92,6 +92,31 @@ def deepim_crops_robust(
     lamb=1.4,
     return_crops=True,
 ):
+
+
+    # print("obs_boxes", obs_boxes[0])
+    # image1 = images[0].permute(1, 2, 0).cpu().numpy()
+    # image1 = (image1 * 255).astype('uint8')
+    # import cv2
+    #
+    # obs_cpu = obs_boxes[0].cpu().numpy()
+    # print("obs_cpu", obs_cpu)
+    # # draw the bounding box
+    #
+    # x1, y1, x2, y2 = obs_cpu
+    # x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+    #
+    # if x1 < 0:
+    #     x1 = 0
+    # if y1 < 0:
+    #     y1 = 0
+    #
+    #
+    # cv2.rectangle(image1, (x1, y1), (x2, y2), (0, 255, 0), 2)
+    #
+    # cv2.imwrite( os.path.join("/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ngp_weight/crop", "image.png"),   image1)
+
+
     batch_size, _, h, w = images.shape
     batch_size = TCO_pred.shape[0]
     device = images.device
@@ -104,9 +129,13 @@ def deepim_crops_robust(
     rend_center_uv = project_points_robust(torch.zeros(batch_size, 1, 3).to(device), K, TCR)
     boxes = deepim_boxes(rend_center_uv, obs_boxes, rend_boxes, im_size=(h, w), lamb=lamb)
     boxes = torch.cat((torch.arange(batch_size).unsqueeze(1).to(device).float(), boxes), dim=1)
+
+    # print("boxes", boxes[0])
     crops = None
     if return_crops:
         crops = crop_images(images, boxes, output_size=output_size, sampling_ratio=4)
+
+
     return boxes[:, 1:], crops
 
 

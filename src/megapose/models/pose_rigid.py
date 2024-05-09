@@ -231,6 +231,20 @@ class PosePredictor(nn.Module):
             lamb=1.4,
         )
 
+        # print("boxes_crop", boxes_crop[0])
+        # import cv2
+        # image1 = images_cropped[0].permute(1, 2, 0).cpu().numpy()
+        # image1 = (image1 * 255).astype('uint8')
+        # obs_cpu = boxes_crop[0].cpu().numpy()
+        # print("obs_cpu", obs_cpu)
+        # # draw the bounding box
+        # x1, y1, x2, y2 = obs_cpu
+        # x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
+        # print("x1, y1, x2, y2", x1, y1, x2, y2)
+        # cv2.rectangle(image1, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        # cv2.imwrite(os.path.join("/home/testbed/PycharmProjects/megapose6d/local_data/examples/02_cracker_box/ngp_weight/crop", "img.png"), image1)
+
+
         K_crop = get_K_crop_resize(
             K=K.clone(), boxes=boxes_crop, orig_size=images.shape[-2:], crop_resize=self.render_size
         ).detach()
@@ -384,29 +398,13 @@ class PosePredictor(nn.Module):
 
         render_mask = False
 
-        loc = os.path.join(LOCAL_DATA_DIR, "examples", labels[0], "rendered_data")
+        loc = os.path.join(LOCAL_DATA_DIR, "examples",labels[0], "rendered_data")
         if not os.path.exists(loc):
             os.mkdir(loc)
 
-        render_data = self.renderer.render(
-            labels=labels_mv,
-            TCO=TCV_O.flatten(0, 1),
-            K=KV.flatten(0, 1),
-            render_mask=render_mask,
-            resolution=self.render_size,
-            render_normals=self.render_normals,
-            render_depth=self.render_depth,
-            light_datas=light_datas,
-        )
-
-        rgb_images = render_data.rgbs.cpu().numpy()
-        rgb_images = np.transpose(rgb_images, (0, 2, 3, 1))
-
-        # save all the images using opencv
-        for i in range(len(rgb_images)):
-            rgb = rgb_images[i] * 255.0
-            rgb = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
-            cv2.imwrite(os.path.join(loc, str(i)  + "_rendered_image_rgb" + ".png"), rgb)
+        # loc = "/home/testbed/PycharmProjects/megapose6d/local_data/clearGrasp/rendered_data"
+        # if not os.path.exists(loc):
+        #     os.mkdir(loc)
 
         render_data_ngp = self.renderer.ngp_renderer(
             labels=labels_mv,
@@ -427,9 +425,30 @@ class PosePredictor(nn.Module):
             rgb_ngp = cv2.cvtColor(rgb_ngp, cv2.COLOR_RGB2BGR)
             cv2.imwrite(os.path.join(loc, str(i) + "_rendered_image_rgb_ngp" + ".png"), rgb_ngp)
 
-        renderer = "ngp"
+        render_data = self.renderer.render(
+            labels=labels_mv,
+            TCO=TCV_O.flatten(0, 1),
+            K=KV.flatten(0, 1),
+            render_mask=render_mask,
+            resolution=self.render_size,
+            render_normals=self.render_normals,
+            render_depth=self.render_depth,
+            light_datas=light_datas,
+        )
+
+        rgb_images = render_data.rgbs.cpu().numpy()
+        rgb_images = np.transpose(rgb_images, (0, 2, 3, 1))
+
+        # save all the images using opencv
+        for i in range(len(rgb_images)):
+            rgb = rgb_images[i] * 255.0
+            rgb = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            cv2.imwrite(os.path.join(loc, str(i) + "_rendered_image_rgb" + ".png"), rgb)
+
+        renderer = "nopr"
 
         if renderer == "ngp":
+
             cat_list = []
             cat_list.append(render_data_ngp.rgbs)
 
@@ -447,6 +466,7 @@ class PosePredictor(nn.Module):
             return renders  # [bsz, n_views*n_channels, H, W]
 
         else:
+
             cat_list = []
             cat_list.append(render_data.rgbs)
 
@@ -737,6 +757,11 @@ class PosePredictor(nn.Module):
             images, K, TCO_input, tCR, labels
         )
 
+        # print("boxes_crop", boxes_crop[0])
+        # print("K_crop", K_crop[0])
+        # print("boxes_crop", boxes_crop[0])
+        #
+        # breakpoint()
         # [B,1,4,4], hack to use the multi-view function
         TCO_V_input = TCO_input.unsqueeze(1)
         KV_crop = K_crop.unsqueeze(1)

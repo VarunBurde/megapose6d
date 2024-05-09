@@ -78,7 +78,7 @@ class PoseEstimator(torch.nn.Module):
         # load cfg and mesh_db from refiner model
         if self.refiner_model is not None:
             self.cfg = self.refiner_model.cfg
-            self.mesh_db = self.refiner_model.mesh_db
+            # self.mesh_db = self.refiner_model.mesh_db
         elif self.coarse_model is not None:
             self.cfg = self.coarse_model.cfg
             self.mesh_db = self.coarse_model.mesh_db
@@ -401,21 +401,21 @@ class PoseEstimator(torch.nn.Module):
 
             # Compute the initial poses  [b,4,4]
 
-            # TCO_init_ = TCO_init_from_boxes_autodepth_with_R(
-            #     bboxes_,
-            #     points_,
-            #     K_,
-            #     SO3_grid_
-            # )
-            # print(TCO_init_[0])
-
-            TCO_init_ = TCO_init_from_boxes_and_nerf(
+            TCO_init_ = TCO_init_from_boxes_autodepth_with_R(
                 bboxes_,
+                points_,
                 K_,
-                labels_,
-                images_,
                 SO3_grid_
             )
+            # print(TCO_init_[0])
+
+            # TCO_init_ = TCO_init_from_boxes_and_nerf(
+            #     bboxes_,
+            #     K_,
+            #     labels_,
+            #     images_,
+            #     SO3_grid_
+            # )
 
 
 
@@ -428,7 +428,7 @@ class PoseEstimator(torch.nn.Module):
             # print("TCO_init_ shape", TCO_init_.shape)
             # break
 
-            del points_
+            # del points_
 
 
             out_ = coarse_model.forward_coarse(

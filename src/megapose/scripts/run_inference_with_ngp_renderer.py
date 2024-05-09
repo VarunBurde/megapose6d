@@ -82,13 +82,13 @@ def make_object_dataset(example_dir: Path) -> RigidObjectDataset:
     for object_dir in object_dirs:
         label = object_dir.name
         mesh_path = None
-        for fn in object_dir.glob("*"):
-            mesh_path = fn
         # for fn in object_dir.glob("*"):
-        #     if fn.suffix in {".obj", ".ply"}:
-        #         assert not mesh_path, f"there multiple meshes in the {label} directory"
-        #         mesh_path = fn
-        # assert mesh_path, f"couldnt find a obj or ply mesh for {label}"
+        #     mesh_path = fn
+        for fn in object_dir.glob("*"):
+            if fn.suffix in {".obj", ".ply"}:
+                assert not mesh_path, f"there multiple meshes in the {label} directory"
+                mesh_path = fn
+        assert mesh_path, f"couldnt find a obj or ply mesh for {label}"
         rigid_objects.append(RigidObject(label=label, mesh_path=mesh_path, mesh_units=mesh_units))
         # TODO: fix mesh units
     rigid_object_dataset = RigidObjectDataset(rigid_objects)
@@ -228,7 +228,7 @@ if __name__ == "__main__":
     set_logging_level("info")
     parser = argparse.ArgumentParser()
 
-    example_dir = LOCAL_DATA_DIR / "examples" / "02_cracker_box"
+    example_dir = LOCAL_DATA_DIR / "examples" / "clearpose_000003"
 
     make_detections_visualization(example_dir)
     run_inference(example_dir, "megapose-1.0-RGB-multi-hypothesis")

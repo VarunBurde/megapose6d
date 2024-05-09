@@ -356,10 +356,17 @@ class Panda3dBatchRenderer:
         TCO = TCO.detach().cpu().numpy()
         Intrinsics = K.detach().cpu().numpy()
 
-        weight_path = os.path.join(LOCAL_DATA_DIR, "examples", labels[0], "ngp_weight", "base.ingp")
+        # weight_path = os.path.join(LOCAL_DATA_DIR, "clearGrasp","model_nerf",labels[0], "base.ingp")
+        # ngp_renderer = ngp_render(weight_path)
+        # world_tranformation = json.loads(open(os.path.join(LOCAL_DATA_DIR,"clearGrasp","model_nerf",labels[0],"transforms.json")).read())
+        # mesh_transformation = np.eye(4)
+        # mesh_scale = world_tranformation["avg_len"]
+
+        weight_path = os.path.join(LOCAL_DATA_DIR, "examples",labels[0], "ngp_weight", "base.ingp")
         ngp_renderer = ngp_render(weight_path)
-        world_tranformation = json.loads(open(os.path.join(LOCAL_DATA_DIR, "examples", labels[0],"ngp_weight", "scale.json")).read())
-        mesh_transformation = np.array(world_tranformation['transformation'])
+        world_tranformation = json.loads(open(os.path.join(LOCAL_DATA_DIR, "examples",labels[0], "ngp_weight","scale.json")).read())
+
+        mesh_transformation = np.array(world_tranformation["transformation"])
         mesh_scale = world_tranformation["scale"]
 
         list_rgbs = [None for _ in np.arange(len(labels))]

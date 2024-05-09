@@ -215,12 +215,12 @@ def TCO_init_from_boxes_autodepth_with_R(boxes_2d, model_points_3d, K, R):
     bb_deltax = (boxes_2d[:, 2] - boxes_2d[:, 0]) + 1
     bb_deltay = (boxes_2d[:, 3] - boxes_2d[:, 1]) + 1
 
-    print("bbox", boxes_2d[0])
-    print("bb_xy_centers", bb_xy_centers[0])
-    print("bb_deltax", bb_deltax[0])
-    print("bb_deltay", bb_deltay[0])
-    print("deltax_3d", deltax_3d[0])
-    print("deltay_3d", deltay_3d[0])
+    # print("bbox", boxes_2d[0])
+    # print("bb_xy_centers", bb_xy_centers[0])
+    # print("bb_deltax", bb_deltax[0])
+    # print("bb_deltay", bb_deltay[0])
+    # print("deltax_3d", deltax_3d[0])
+    # print("deltay_3d", deltay_3d[0])
 
     z_from_dx = fxfy[:, 0] * deltax_3d / bb_deltax
     z_from_dy = fxfy[:, 1] * deltay_3d / bb_deltay
@@ -286,13 +286,22 @@ def TCO_init_from_boxes_and_nerf(boxes_2d, K, label, image, R):
     Extrinsics[2, 3] = z_guess
     resolution = [image.shape[3], image.shape[2]]
 
-    ngp_data_path = os.path.join(LOCAL_DATA_DIR, "examples", label[0], "ngp_weight")
+    # ngp_data_path = os.path.join(LOCAL_DATA_DIR, "examples", label[0], "ngp_weight")
+    #
+    # weight_path = os.path.join(ngp_data_path, "base.ingp")
+    # world_tranformation = json.loads(open(
+    #     os.path.join(ngp_data_path, "scale.json")).read())
+    # mesh_transformation = np.array(world_tranformation['transformation'])
+    # mesh_scale = world_tranformation["scale"]
 
-    weight_path = os.path.join(ngp_data_path, "base.ingp")
-    world_tranformation = json.loads(open(
-        os.path.join(ngp_data_path, "scale.json")).read())
-    mesh_transformation = np.array(world_tranformation['transformation'])
-    mesh_scale = world_tranformation["scale"]
+    weight_path = os.path.join(LOCAL_DATA_DIR, "clearGrasp", "model_nerf", label[0], "base.ingp")
+    # ngp_renderer = ngp_render(weight_path)
+    world_tranformation = json.loads(
+        open(os.path.join(LOCAL_DATA_DIR, "clearGrasp", "model_nerf", label[0], "transforms.json")).read())
+    # mesh_transformation = np.array(world_tranformation['transformation'])
+    mesh_transformation = np.eye(4)
+    mesh_scale = world_tranformation["avg_len"]
+
 
     ngp_renderer = ngp_render(weight_path)
     ngp_renderer.set_resolution(resolution)
@@ -379,12 +388,12 @@ def TCO_init_from_boxes_and_nerf(boxes_2d, K, label, image, R):
     # deltax_3d = w
     # deltay_3d = h
 
-    print("bbox_nerf", boxes_2d[0])
-    print("bb_xy_centers_nerf", bb_xy_centers[0])
-    print("bb_deltax_nerf", bb_deltax[0])
-    print("bb_deltay_nerf", bb_deltay[0])
-    print("deltax_3d_nerf", deltax_3d)
-    print("deltay_3d_nerf", deltay_3d)
+    # print("bbox_nerf", boxes_2d[0])
+    # print("bb_xy_centers_nerf", bb_xy_centers[0])
+    # print("bb_deltax_nerf", bb_deltax[0])
+    # print("bb_deltay_nerf", bb_deltay[0])
+    # print("deltax_3d_nerf", deltax_3d)
+    # print("deltay_3d_nerf", deltay_3d)
 
     z_from_dx = fxfy[:, 0] * deltax_3d / bb_deltax
     z_from_dy = fxfy[:, 1] * deltay_3d / bb_deltay

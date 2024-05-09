@@ -28,6 +28,26 @@ class loader:
                 bbox = self.get_bbox(scene_id, img_id, objects.index(object))
 
                 return Rot, TWO, T, K, resolution, bbox, image, depth
+    def get_gt_RTK_cleargrasp(self,scene_id, img_id, index):
+        scene_id = str(scene_id).zfill(6)
+
+        scene_gt_location = os.path.join(self.ycb_data, scene_id, 'scene_gt.json')
+        gt_file = json.load(open(scene_gt_location))
+        objects = gt_file[str(img_id)]
+        object = objects[int(index)]
+        object_id = object['obj_id']
+
+        T = np.asarray(object['cam_t_m2c']) * 0.001
+        Rot = np.asarray(object['cam_R_m2c'])
+        Rot = Rot.reshape(3, 3)
+        r = R.from_matrix(Rot)
+        # degree = r.as_euler('zyx', degrees=True)
+        TWO = r.as_quat()
+        K = self.get_K_mat(scene_id, img_id)
+        resolution, image, depth = self.get_resolution_image(scene_id, img_id)
+        bbox = self.get_bbox(scene_id, img_id, objects.index(object))
+
+        return Rot, TWO, T, K, resolution, bbox, image, depth, object_id
 
     def get_K_mat(self,scene_id, img_id ):
         scene_id = str(scene_id).zfill(6)

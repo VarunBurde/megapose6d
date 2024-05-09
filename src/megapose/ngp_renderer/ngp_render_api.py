@@ -1,5 +1,5 @@
 import sys
-pyngp_path = "/home/testbed/Projects/instant-ngp/build_megapose"
+pyngp_path = "/home/testbed/PycharmProjects/instant-ngp/build_megapose"
 
 sys.path.append(pyngp_path)
 import pyngp as ngp  # noqa
@@ -12,7 +12,7 @@ class ngp_render():
         self.weight_path = weight_path
         self.testbed = ngp.Testbed()
         self.testbed.load_snapshot(weight_path)
-        self.screenshot_spp = 1
+        self.screenshot_spp = 32
         self.resolution = None
         self.flip_mat = np.array([
                                     [1, 0, 0, 0],
@@ -39,24 +39,34 @@ class ngp_render():
 
         # width = self.resolution[0]
         # foclen = K[0, 0]
-        # fov = np.degrees(2 * np.arctan2(width, 2 * foclen))
-        # self.testbed.fov_axis = 0
-        # self.testbed.fov = fov
+        #fov = np.degrees(2 * np.arctan2(width, 2 * foclen))
+        #self.testbed.fov_axis = 0
+        #self.testbed.fov = fov
 
         # fov_x = np.arctan2(self.resolution[0]/2, K[0,0]) * 2 * 180 / np.pi
         # fov_y = np.arctan2(self.resolution[1]/2, K[1,1]) * 2 * 180 / np.pi
 
+        # diagnal with w and h
+        # D = np.sqrt(self.resolution[0]**2 + self.resolution[1]**2)
+        # fov = 2 * np.arctan2(D, 2 * K[0,0]) * 180 / np.pi
+
         fov_x = np.degrees(2 * np.arctan2(self.resolution[0], 2 * K[0,0]))
         fov_y = np.degrees(2 * np.arctan2(self.resolution[1], 2 * K[1,1]))
-        self.testbed.screen_center = np.array([1 - (K[0,2]/self.resolution[0]), 1 - (K[1,2] /self.resolution[1])])
+        self.testbed.screen_center = np.array([1-(K[0,2]/self.resolution[0]), 1-(K[1,2] /self.resolution[1])])
+        # self.testbed.screen_center = np.array([1 - (K[0,2]/self.resolution[0]), 1 - (K[1,2] /self.resolution[1])])
+        # self.testbed.screen_center = np.array([ K[0, 2]  /  self.resolution[0], K[1,2] /self.resolution[1]])
+        # self.testbed.screen_center = np.array([ K[0, 2] / self.resolution[0], K[1,2] /self.resolution[1]])
 
-        self.testbed.fov_axis = 0
-        self.testbed.fov = fov_x
+        # self.testbed.fov_axis = 0
+        # self.testbed.fov = fov
 
         # self.testbed.fov_axis = 1
         # self.testbed.fov = fov_y
 
-        # self.testbed.fov_xy = np.array([fov_x, fov_y])
+        # print(self.resolution)
+        # print(K)
+
+        self.testbed.fov_xy = np.array([fov_y, fov_y])
 
 
     def set_exposure(self, exposure):

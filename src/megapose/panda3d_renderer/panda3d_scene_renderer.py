@@ -35,7 +35,7 @@ import panda3d as p3d
 from direct.showbase.ShowBase import ShowBase
 from tqdm import tqdm
 from scipy.spatial.transform import Rotation as R
-
+from megapose.config import LOCAL_DATA_DIR
 # MegaPose
 from megapose.datasets.object_dataset import RigidObjectDataset
 
@@ -386,11 +386,17 @@ class Panda3dSceneRenderer:
                 Extrinsics = object.TWO.toHomogeneousMatrix()
                 label = object.label
 
-                root_path = os.path.split(os.path.split(os.path.split(os.path.split(__file__)[0])[0])[0])[0]
-                weight_path = os.path.join(root_path, "local_data", "examples", label, "ngp_weight", "base.ingp")
-                world_tranformation = json.loads(open(
-                    os.path.join(root_path, "local_data", "examples", label, "ngp_weight", "scale.json")).read())
-                mesh_transformation = np.array(world_tranformation['transformation'])
+                # weight_path = os.path.join(LOCAL_DATA_DIR, "clearGrasp", "model_nerf", label, "base.ingp")
+                # world_tranformation = json.loads(
+                #     open(os.path.join(LOCAL_DATA_DIR, "clearGrasp", "model_nerf", label, "transforms.json")).read())
+                # mesh_transformation = np.eye(4)
+                # mesh_scale = world_tranformation["avg_len"]
+
+                weight_path = os.path.join(LOCAL_DATA_DIR, "examples", label, "ngp_weight", "base.ingp")
+                world_tranformation = json.loads(
+                    open(os.path.join(LOCAL_DATA_DIR, "examples", label, "ngp_weight", "scale.json")).read())
+
+                mesh_transformation = np.array(world_tranformation["transformation"])
                 mesh_scale = world_tranformation["scale"]
 
                 ngp_renderer = ngp_render(weight_path)

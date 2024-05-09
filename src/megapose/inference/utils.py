@@ -99,6 +99,7 @@ def load_pose_models(
 
     logger.debug("Creating MeshDatabase")
     mesh_db = MeshDataBase.from_object_ds(object_dataset)
+    # mesh_db = None
     logger.debug("Done creating MeshDatabase")
 
     def make_renderer(renderer_type: str) -> Panda3dBatchRenderer:
@@ -125,6 +126,7 @@ def load_pose_models(
         refiner_renderer = make_renderer(refiner_cfg.renderer)
 
     mesh_db_batched = mesh_db.batched().cuda()
+
 
     def load_model(run_id: str, renderer: Panda3dBatchRenderer) -> PosePredictor:
         if run_id is None:
